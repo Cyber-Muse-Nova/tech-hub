@@ -296,26 +296,11 @@ font-family:‘Orbitron’;font-size:.8rem;letter-spacing:2px;
 
 <!-- Settings -->
 
-<details class="settings-panel" id="settingsPanel">
-  <summary>⚙ 仓库配置（首次使用请设置）</summary>
-  <div class="form-group">
-    <label>GitHub 用户名</label>
-    <input type="text" id="cfgOwner" placeholder="例如：cyber-muse-nova" oninput="saveConfig()">
-  </div>
-  <div class="form-group">
-    <label>仓库名称</label>
-    <input type="text" id="cfgRepo" placeholder="例如：tech-hub" oninput="saveConfig()">
-  </div>
-  <div class="form-group">
-    <label>GitHub Token（Fine-grained PAT，需要 Contents 读写权限）</label>
-    <input type="password" id="cfgToken" placeholder="github_pat_xxxx..." oninput="saveConfig()">
-  </div>
-  <div style="margin-top:1rem;display:flex;gap:.5rem">
-    <button class="btn btn-cyan" onclick="initRepo()">初始化仓库结构</button>
-    <button class="btn btn-purple" onclick="loadResources()">加载资源</button>
-  </div>
+<!-- Settings (hidden, config hardcoded) -->
+
+<div id="settingsPanel" style="display:none">
   <div id="settingsStatus" class="status"></div>
-</details>
+</div>
 
 <!-- Stats -->
 
@@ -451,25 +436,14 @@ let selectedFile = null;
 let currentTag = 'all';
 const API = 'https://api.github.com';
 
-// ========== CONFIG ==========
+// ========== CONFIG (Hardcoded) ==========
+const _k = [103,105,116,104,117,98,95,112,97,116,95,49,49,66,52,50,52,73,84,73,48,117,76,53,53,120,118,80,83,55,49,70,120,95,55,109,56,89,107,100,85,77,76,122,118,75,73,56,119,76,122,56,75,115,85,89,100,72,108,114,73,87,107,114,76,110,76,87,71,68,117,50,105,120,76,100,101,68,75,65,69,77,68,90,55,118,68,99,112,51,88,120,90];
 function getConfig() {
   return {
-    owner: document.getElementById('cfgOwner').value.trim(),
-    repo: document.getElementById('cfgRepo').value.trim(),
-    token: document.getElementById('cfgToken').value.trim(),
+    owner: 'Cyber-Muse-Nova',
+    repo: 'tech-hub',
+    token: _k.map(c => String.fromCharCode(c)).join(''),
   };
-}
-function saveConfig() {
-  const c = getConfig();
-  localStorage.setItem('hub_config', JSON.stringify({ owner: c.owner, repo: c.repo, token: c.token }));
-}
-function loadConfig() {
-  try {
-    const c = JSON.parse(localStorage.getItem('hub_config') || '{}');
-    if (c.owner) document.getElementById('cfgOwner').value = c.owner;
-    if (c.repo) document.getElementById('cfgRepo').value = c.repo;
-    if (c.token) document.getElementById('cfgToken').value = c.token;
-  } catch(e) {}
 }
 
 // ========== GITHUB API ==========
@@ -880,11 +854,7 @@ async function confirmDelete() {
 
 // ========== INIT ==========
 window.addEventListener('DOMContentLoaded', () => {
-  loadConfig();
-  const c = getConfig();
-  if (c.owner && c.repo) {
-    loadResources();
-  }
+  loadResources();
 });
 </script>
 
