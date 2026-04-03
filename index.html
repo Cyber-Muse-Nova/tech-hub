@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ Tech Resource Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#06060e;--bg2:#0c0c1a;--bg3:#12122a;
+  --cyan:#00f0ff;--magenta:#ff00aa;--purple:#8b5cf6;
+  --green:#00ff88;--yellow:#ffcc00;
+  --text:#e0e0f0;--text2:#8888aa;--border:#1a1a3a;
+}
+body{
+  font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,240,255,.015) 2px,rgba(0,240,255,.015) 4px),
+    radial-gradient(ellipse at 20% 50%,rgba(139,92,246,.08),transparent 50%),
+    radial-gradient(ellipse at 80% 50%,rgba(255,0,170,.06),transparent 50%);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(–bg2)}
+::-webkit-scrollbar-thumb{background:var(–purple);border-radius:3px}
+
+/* Header */
+.header{
+position:relative;z-index:10;padding:2rem 2rem 1rem;
+border-bottom:1px solid var(–border);
+background:linear-gradient(180deg,rgba(0,240,255,.03),transparent);
+}
+.header-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.logo{font-family:‘Orbitron’,monospace;font-size:1.6rem;font-weight:900;letter-spacing:3px}
+.logo span{color:var(–cyan);text-shadow:0 0 20px rgba(0,240,255,.5)}
+.logo .dot{color:var(–magenta)}
+.header-actions{display:flex;gap:.8rem;align-items:center}
+
+/* Search */
+.search-box{
+position:relative;display:flex;align-items:center;
+background:var(–bg2);border:1px solid var(–border);border-radius:8px;
+padding:.5rem 1rem;min-width:280px;transition:.3s;
+}
+.search-box:focus-within{border-color:var(–cyan);box-shadow:0 0 15px rgba(0,240,255,.15)}
+.search-box input{
+background:none;border:none;color:var(–text);font-family:‘Rajdhani’;
+font-size:1rem;width:100%;outline:none;
+}
+.search-box input::placeholder{color:var(–text2)}
+.search-icon{color:var(–cyan);margin-right:.5rem;font-size:1.1rem}
+
+/* Buttons */
+.btn{
+font-family:‘Rajdhani’;font-weight:600;font-size:.9rem;
+padding:.55rem 1.2rem;border:1px solid;border-radius:6px;
+cursor:pointer;transition:.3s;letter-spacing:1px;text-transform:uppercase;
+display:inline-flex;align-items:center;gap:.4rem;
+}
+.btn-cyan{
+background:rgba(0,240,255,.1);color:var(–cyan);border-color:rgba(0,240,255,.3);
+}
+.btn-cyan:hover{background:rgba(0,240,255,.2);box-shadow:0 0 20px rgba(0,240,255,.2)}
+.btn-magenta{
+background:rgba(255,0,170,.1);color:var(–magenta);border-color:rgba(255,0,170,.3);
+}
+.btn-magenta:hover{background:rgba(255,0,170,.2);box-shadow:0 0 20px rgba(255,0,170,.2)}
+.btn-purple{
+background:rgba(139,92,246,.1);color:var(–purple);border-color:rgba(139,92,246,.3);
+}
+.btn-purple:hover{background:rgba(139,92,246,.2);box-shadow:0 0 20px rgba(139,92,246,.2)}
+
+/* Stats bar */
+.stats-bar{
+display:flex;gap:2rem;padding:1rem 2rem;
+font-family:‘Share Tech Mono’,monospace;font-size:.85rem;color:var(–text2);
+border-bottom:1px solid var(–border);position:relative;z-index:10;
+}
+.stat-item span{color:var(–cyan)}
+
+/* Tags */
+.tags-bar{
+display:flex;gap:.5rem;padding:1rem 2rem;flex-wrap:wrap;
+position:relative;z-index:10;
+}
+.tag{
+padding:.3rem .8rem;border-radius:20px;font-size:.8rem;font-weight:600;
+cursor:pointer;transition:.3s;border:1px solid var(–border);
+background:var(–bg2);color:var(–text2);letter-spacing:.5px;
+}
+.tag:hover,.tag.active{
+border-color:var(–cyan);color:var(–cyan);
+background:rgba(0,240,255,.08);
+}
+
+/* Grid */
+.content{padding:1rem 2rem 4rem;position:relative;z-index:10}
+.grid{
+display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+gap:1rem;
+}
+
+/* Card */
+.card{
+background:var(–bg2);border:1px solid var(–border);border-radius:10px;
+padding:1.2rem;transition:.3s;position:relative;overflow:hidden;
+}
+.card::before{
+content:’’;position:absolute;top:0;left:0;right:0;height:2px;
+background:linear-gradient(90deg,var(–cyan),var(–purple),var(–magenta));
+opacity:0;transition:.3s;
+}
+.card:hover{border-color:rgba(0,240,255,.3);transform:translateY(-2px)}
+.card:hover::before{opacity:1}
+.card-header{display:flex;align-items:flex-start;gap:.8rem;margin-bottom:.8rem}
+.card-icon{
+width:42px;height:42px;border-radius:8px;display:flex;align-items:center;
+justify-content:center;font-size:1.1rem;flex-shrink:0;font-weight:700;
+font-family:‘Share Tech Mono’,monospace;
+}
+.card-icon.file{background:rgba(0,240,255,.12);color:var(–cyan);border:1px solid rgba(0,240,255,.2)}
+.card-icon.link{background:rgba(139,92,246,.12);color:var(–purple);border:1px solid rgba(139,92,246,.2)}
+.card-title{
+font-size:1rem;font-weight:600;color:var(–text);
+word-break:break-all;line-height:1.3;
+}
+.card-meta{font-size:.8rem;color:var(–text2);margin-top:.3rem;font-family:‘Share Tech Mono’,monospace}
+.card-desc{font-size:.85rem;color:var(–text2);margin:.6rem 0;line-height:1.4}
+.card-actions{display:flex;gap:.5rem;margin-top:.8rem}
+.card-actions .btn{font-size:.75rem;padding:.35rem .8rem}
+.card-tag{
+display:inline-block;padding:.15rem .5rem;border-radius:10px;font-size:.7rem;
+background:rgba(139,92,246,.1);color:var(–purple);border:1px solid rgba(139,92,246,.2);
+margin-right:.3rem;
+}
+
+/* Upload FAB */
+.fab{
+position:fixed;bottom:2rem;right:2rem;z-index:100;
+width:56px;height:56px;border-radius:50%;border:none;
+background:linear-gradient(135deg,var(–cyan),var(–purple));
+color:#fff;font-size:1.5rem;cursor:pointer;
+box-shadow:0 4px 30px rgba(0,240,255,.3);transition:.3s;
+display:flex;align-items:center;justify-content:center;
+}
+.fab:hover{transform:scale(1.1);box-shadow:0 4px 40px rgba(0,240,255,.5)}
+
+/* Modal */
+.modal-overlay{
+position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(5px);
+z-index:200;display:none;align-items:center;justify-content:center;
+padding:1rem;
+}
+.modal-overlay.show{display:flex}
+.modal{
+background:var(–bg2);border:1px solid var(–border);border-radius:14px;
+width:100%;max-width:520px;max-height:90vh;overflow-y:auto;
+box-shadow:0 0 60px rgba(0,240,255,.1);
+}
+.modal-header{
+display:flex;justify-content:space-between;align-items:center;
+padding:1.2rem 1.5rem;border-bottom:1px solid var(–border);
+}
+.modal-header h2{font-family:‘Orbitron’;font-size:1rem;letter-spacing:2px;color:var(–cyan)}
+.modal-close{
+background:none;border:none;color:var(–text2);font-size:1.3rem;
+cursor:pointer;transition:.3s;
+}
+.modal-close:hover{color:var(–magenta)}
+.modal-body{padding:1.5rem}
+
+/* Tabs */
+.tabs{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid var(–border)}
+.tab{
+padding:.6rem 1.2rem;cursor:pointer;font-weight:600;font-size:.9rem;
+color:var(–text2);border-bottom:2px solid transparent;transition:.3s;
+background:none;border-top:none;border-left:none;border-right:none;
+font-family:‘Rajdhani’;
+}
+.tab.active{color:var(–cyan);border-bottom-color:var(–cyan)}
+
+/* Form */
+.form-group{margin-bottom:1.2rem}
+.form-group label{
+display:block;font-size:.85rem;color:var(–text2);margin-bottom:.4rem;
+font-weight:600;letter-spacing:.5px;
+}
+.form-group input,.form-group textarea,.form-group select{
+width:100%;padding:.6rem .8rem;background:var(–bg);
+border:1px solid var(–border);border-radius:6px;color:var(–text);
+font-family:‘Rajdhani’;font-size:.95rem;outline:none;transition:.3s;
+}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{
+border-color:var(–cyan);box-shadow:0 0 10px rgba(0,240,255,.1);
+}
+.form-group textarea{resize:vertical;min-height:80px}
+
+/* Drop zone */
+.drop-zone{
+border:2px dashed var(–border);border-radius:10px;padding:2rem;
+text-align:center;cursor:pointer;transition:.3s;margin-bottom:1rem;
+}
+.drop-zone:hover,.drop-zone.dragover{
+border-color:var(–cyan);background:rgba(0,240,255,.03);
+}
+.drop-zone p{color:var(–text2);font-size:.9rem}
+.drop-zone .icon{font-size:2rem;margin-bottom:.5rem}
+.file-name{
+font-family:‘Share Tech Mono’;font-size:.85rem;color:var(–green);
+margin-top:.5rem;
+}
+
+/* Status */
+.status{
+padding:.6rem 1rem;border-radius:6px;font-size:.85rem;margin-top:1rem;
+display:none;
+}
+.status.success{display:block;background:rgba(0,255,136,.1);color:var(–green);border:1px solid rgba(0,255,136,.2)}
+.status.error{display:block;background:rgba(255,0,170,.1);color:var(–magenta);border:1px solid rgba(255,0,170,.2)}
+.status.loading{display:block;background:rgba(0,240,255,.1);color:var(–cyan);border:1px solid rgba(0,240,255,.2)}
+
+/* Empty state */
+.empty{
+text-align:center;padding:4rem 2rem;color:var(–text2);
+}
+.empty .icon{font-size:3rem;margin-bottom:1rem;opacity:.5}
+.empty p{font-size:1rem}
+
+/* Settings panel */
+.settings-panel{
+background:var(–bg3);border:1px solid var(–border);border-radius:10px;
+padding:1.2rem;margin:1rem 2rem;position:relative;z-index:10;
+}
+.settings-panel summary{
+cursor:pointer;font-weight:600;color:var(–yellow);
+font-family:‘Orbitron’;font-size:.8rem;letter-spacing:2px;
+}
+.settings-panel .form-group{margin-top:1rem}
+
+/* Responsive */
+@media(max-width:640px){
+.header-top{flex-direction:column;align-items:flex-start}
+.search-box{min-width:100%}
+.grid{grid-template-columns:1fr}
+.stats-bar{flex-wrap:wrap;gap:1rem}
+}
+
+/* Animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.card{animation:fadeIn .4s ease both}
+.grid .card:nth-child(2){animation-delay:.05s}
+.grid .card:nth-child(3){animation-delay:.1s}
+.grid .card:nth-child(4){animation-delay:.15s}
+.grid .card:nth-child(5){animation-delay:.2s}
+.grid .card:nth-child(6){animation-delay:.25s}
+
+/* Glitch effect for logo */
+@keyframes glitch{
+0%,100%{text-shadow:0 0 20px rgba(0,240,255,.5)}
+25%{text-shadow:-2px 0 rgba(255,0,170,.5),2px 0 rgba(0,240,255,.5)}
+50%{text-shadow:0 0 20px rgba(0,240,255,.8)}
+75%{text-shadow:2px 0 rgba(255,0,170,.5),-2px 0 rgba(0,240,255,.5)}
+}
+.logo:hover span{animation:glitch .3s ease}
+</style>
+
+</head>
+<body>
+
+<!-- Header -->
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">
+      <span>TECH</span><span class="dot">:</span><span>:</span>RESOURCE<span class="dot">::HUB</span>
+    </div>
+    <div class="header-actions">
+      <div class="search-box">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="searchInput" placeholder="搜索资源..." oninput="filterResources()">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings -->
+
+<details class="settings-panel" id="settingsPanel">
+  <summary>⚙ 仓库配置（首次使用请设置）</summary>
+  <div class="form-group">
+    <label>GitHub 用户名</label>
+    <input type="text" id="cfgOwner" placeholder="例如：cyber-muse-nova" oninput="saveConfig()">
+  </div>
+  <div class="form-group">
+    <label>仓库名称</label>
+    <input type="text" id="cfgRepo" placeholder="例如：tech-hub" oninput="saveConfig()">
+  </div>
+  <div class="form-group">
+    <label>GitHub Token（Fine-grained PAT，需要 Contents 读写权限）</label>
+    <input type="password" id="cfgToken" placeholder="github_pat_xxxx..." oninput="saveConfig()">
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.5rem">
+    <button class="btn btn-cyan" onclick="initRepo()">初始化仓库结构</button>
+    <button class="btn btn-purple" onclick="loadResources()">加载资源</button>
+  </div>
+  <div id="settingsStatus" class="status"></div>
+</details>
+
+<!-- Stats -->
+
+<div class="stats-bar">
+  <div class="stat-item">📁 文件: <span id="fileCount">0</span></div>
+  <div class="stat-item">🔗 链接: <span id="linkCount">0</span></div>
+  <div class="stat-item">📊 总计: <span id="totalCount">0</span></div>
+</div>
+
+<!-- Tags -->
+
+<div class="tags-bar" id="tagsBar">
+  <span class="tag active" onclick="filterByTag('all')">全部</span>
+  <span class="tag" onclick="filterByTag('file')">📁 文件</span>
+  <span class="tag" onclick="filterByTag('link')">🔗 链接</span>
+</div>
+
+<!-- Content -->
+
+<div class="content">
+  <div class="grid" id="resourceGrid">
+    <div class="empty">
+      <div class="icon">📡</div>
+      <p>请先在上方配置仓库信息并点击「加载资源」</p>
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+
+<button class="fab" onclick="openModal()" title="上传资源">＋</button>
+
+<!-- Upload Modal -->
+
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>上传资源</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('file')">📁 上传文件</button>
+        <button class="tab" onclick="switchTab('link')">🔗 添加链接</button>
+      </div>
+
+```
+  <!-- File Upload -->
+  <div id="tabFile">
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <div class="icon">📤</div>
+      <p>点击选择文件 或 拖拽文件到此处</p>
+      <p style="font-size:.75rem;margin-top:.3rem;color:var(--text2)">支持所有格式</p>
+      <div class="file-name" id="fileName"></div>
+    </div>
+    <input type="file" id="fileInput" style="display:none" onchange="handleFile(this)">
+    <div class="form-group">
+      <label>分类标签（可选）</label>
+      <input type="text" id="fileTag" placeholder="例如：教程、模板、工具...">
+    </div>
+    <div class="form-group">
+      <label>上传者昵称</label>
+      <input type="text" id="fileUploader" placeholder="你的昵称">
+    </div>
+    <button class="btn btn-cyan" style="width:100%;justify-content:center" onclick="uploadFile()">
+      ⚡ 上传文件
+    </button>
+  </div>
+
+  <!-- Link Add -->
+  <div id="tabLink" style="display:none">
+    <div class="form-group">
+      <label>链接标题</label>
+      <input type="text" id="linkTitle" placeholder="资源名称">
+    </div>
+    <div class="form-group">
+      <label>链接地址</label>
+      <input type="url" id="linkUrl" placeholder="https://...">
+    </div>
+    <div class="form-group">
+      <label>简介（可选）</label>
+      <textarea id="linkDesc" placeholder="简要描述这个资源..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>分类标签（可选）</label>
+      <input type="text" id="linkTag" placeholder="例如：文档、视频、工具...">
+    </div>
+    <div class="form-group">
+      <label>上传者昵称</label>
+      <input type="text" id="linkUploader" placeholder="你的昵称">
+    </div>
+    <button class="btn btn-purple" style="width:100%;justify-content:center" onclick="addLink()">
+      ⚡ 添加链接
+    </button>
+  </div>
+
+  <div id="uploadStatus" class="status"></div>
+</div>
+```
+
+  </div>
+</div>
+
+<script>
+// ========== STATE ==========
+let allResources = [];
+let selectedFile = null;
+let currentTag = 'all';
+const API = 'https://api.github.com';
+
+// ========== CONFIG ==========
+function getConfig() {
+  return {
+    owner: document.getElementById('cfgOwner').value.trim(),
+    repo: document.getElementById('cfgRepo').value.trim(),
+    token: document.getElementById('cfgToken').value.trim(),
+  };
+}
+function saveConfig() {
+  const c = getConfig();
+  localStorage.setItem('hub_config', JSON.stringify({ owner: c.owner, repo: c.repo, token: c.token }));
+}
+function loadConfig() {
+  try {
+    const c = JSON.parse(localStorage.getItem('hub_config') || '{}');
+    if (c.owner) document.getElementById('cfgOwner').value = c.owner;
+    if (c.repo) document.getElementById('cfgRepo').value = c.repo;
+    if (c.token) document.getElementById('cfgToken').value = c.token;
+  } catch(e) {}
+}
+
+// ========== GITHUB API ==========
+function ghHeaders() {
+  const h = { 'Accept': 'application/vnd.github+json' };
+  const t = getConfig().token;
+  if (t) h['Authorization'] = 'Bearer ' + t;
+  return h;
+}
+
+async function ghGet(path) {
+  const c = getConfig();
+  const r = await fetch(`${API}/repos/${c.owner}/${c.repo}/contents/${path}`, { headers: ghHeaders() });
+  if (!r.ok) throw new Error(`GitHub API ${r.status}: ${r.statusText}`);
+  return r.json();
+}
+
+async function ghPut(path, content, message, sha) {
+  const c = getConfig();
+  const body = { message, content };
+  if (sha) body.sha = sha;
+  const r = await fetch(`${API}/repos/${c.owner}/${c.repo}/contents/${path}`, {
+    method: 'PUT',
+    headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw new Error(err.message || `上传失败 (${r.status})`);
+  }
+  return r.json();
+}
+
+// ========== INIT REPO ==========
+async function initRepo() {
+  const st = document.getElementById('settingsStatus');
+  st.className = 'status loading'; st.textContent = '⏳ 正在初始化仓库结构...'; st.style.display = 'block';
+  try {
+    // Create resources/.gitkeep
+    try { await ghGet('resources'); } catch {
+      await ghPut('resources/.gitkeep', btoa(''), '初始化 resources 文件夹');
+    }
+    // Create data/links.json
+    try { await ghGet('data/links.json'); } catch {
+      await ghPut('data/links.json', btoa('[]'), '初始化 links.json');
+    }
+    st.className = 'status success'; st.textContent = '✅ 仓库结构初始化完成！';
+    loadResources();
+  } catch(e) {
+    st.className = 'status error'; st.textContent = '❌ ' + e.message;
+  }
+}
+
+// ========== LOAD RESOURCES ==========
+async function loadResources() {
+  const grid = document.getElementById('resourceGrid');
+  grid.innerHTML = '<div class="empty"><div class="icon">⏳</div><p>正在从 GitHub 加载资源...</p></div>';
+  allResources = [];
+
+  try {
+    // Load files
+    try {
+      const files = await ghGet('resources');
+      if (Array.isArray(files)) {
+        for (const f of files) {
+          if (f.name === '.gitkeep') continue;
+          allResources.push({
+            type: 'file',
+            name: f.name,
+            size: f.size,
+            url: f.download_url,
+            sha: f.sha,
+            tag: getFileExtTag(f.name),
+            uploader: '',
+          });
+        }
+      }
+    } catch(e) { console.warn('No resources folder yet'); }
+
+    // Load links
+    try {
+      const linksData = await ghGet('data/links.json');
+      const links = JSON.parse(atob(linksData.content.replace(/\n/g, '')));
+      for (const l of links) {
+        allResources.push({ type: 'link', ...l });
+      }
+    } catch(e) { console.warn('No links.json yet'); }
+
+    renderResources();
+    updateStats();
+    // Close settings if loaded successfully
+    if (allResources.length > 0) document.getElementById('settingsPanel').open = false;
+
+  } catch(e) {
+    grid.innerHTML = `<div class="empty"><div class="icon">⚠️</div><p>加载失败: ${e.message}</p></div>`;
+  }
+}
+
+// ========== RENDER ==========
+function renderResources() {
+  const grid = document.getElementById('resourceGrid');
+  const search = document.getElementById('searchInput').value.toLowerCase();
+
+  let filtered = allResources.filter(r => {
+    if (currentTag === 'file' && r.type !== 'file') return false;
+    if (currentTag === 'link' && r.type !== 'link') return false;
+    if (search) {
+      const text = `${r.name||''} ${r.title||''} ${r.desc||''} ${r.tag||''} ${r.uploader||''}`.toLowerCase();
+      return text.includes(search);
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="empty"><div class="icon">🔍</div><p>没有找到匹配的资源</p></div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map((r, i) => {
+    if (r.type === 'file') {
+      const ext = r.name.split('.').pop().toUpperCase();
+      const size = formatSize(r.size);
+      return `<div class="card" style="animation-delay:${i*0.04}s">
+        <div class="card-header">
+          <div class="card-icon file">${ext.slice(0,3)}</div>
+          <div>
+            <div class="card-title">${esc(r.name)}</div>
+            <div class="card-meta">${size}${r.uploader ? ' · ' + esc(r.uploader) : ''}</div>
+          </div>
+        </div>
+        ${r.tag ? `<span class="card-tag">${esc(r.tag)}</span>` : ''}
+        <div class="card-actions">
+          <a href="${r.url}" target="_blank" class="btn btn-cyan" download>⬇ 下载</a>
+        </div>
+      </div>`;
+    } else {
+      return `<div class="card" style="animation-delay:${i*0.04}s">
+        <div class="card-header">
+          <div class="card-icon link">🔗</div>
+          <div>
+            <div class="card-title">${esc(r.title || r.url)}</div>
+            <div class="card-meta">${esc(getDomain(r.url))}${r.uploader ? ' · ' + esc(r.uploader) : ''}</div>
+          </div>
+        </div>
+        ${r.desc ? `<div class="card-desc">${esc(r.desc)}</div>` : ''}
+        ${r.tag ? `<span class="card-tag">${esc(r.tag)}</span>` : ''}
+        <div class="card-actions">
+          <a href="${esc(r.url)}" target="_blank" class="btn btn-purple">↗ 打开链接</a>
+        </div>
+      </div>`;
+    }
+  }).join('');
+}
+
+function updateStats() {
+  const files = allResources.filter(r => r.type === 'file').length;
+  const links = allResources.filter(r => r.type === 'link').length;
+  document.getElementById('fileCount').textContent = files;
+  document.getElementById('linkCount').textContent = links;
+  document.getElementById('totalCount').textContent = files + links;
+}
+
+// ========== FILE UPLOAD ==========
+function handleFile(input) {
+  if (input.files.length > 0) {
+    selectedFile = input.files[0];
+    document.getElementById('fileName').textContent = '📎 ' + selectedFile.name + ' (' + formatSize(selectedFile.size) + ')';
+  }
+}
+
+// Drop zone
+document.addEventListener('DOMContentLoaded', () => {
+  const dz = document.getElementById('dropZone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('dragover');
+    if (e.dataTransfer.files.length > 0) {
+      selectedFile = e.dataTransfer.files[0];
+      document.getElementById('fileName').textContent = '📎 ' + selectedFile.name + ' (' + formatSize(selectedFile.size) + ')';
+    }
+  });
+});
+
+async function uploadFile() {
+  if (!selectedFile) return showUploadStatus('error', '请先选择文件');
+  const c = getConfig();
+  if (!c.token) return showUploadStatus('error', '需要 GitHub Token 才能上传');
+
+  showUploadStatus('loading', '⏳ 正在上传...');
+
+  try {
+    const base64 = await fileToBase64(selectedFile);
+    const tag = document.getElementById('fileTag').value.trim();
+    const uploader = document.getElementById('fileUploader').value.trim();
+    const fileName = selectedFile.name;
+
+    await ghPut(
+      `resources/${fileName}`,
+      base64,
+      `上传文件: ${fileName}${uploader ? ' by ' + uploader : ''}`
+    );
+
+    showUploadStatus('success', '✅ 文件上传成功！');
+    selectedFile = null;
+    document.getElementById('fileName').textContent = '';
+    document.getElementById('fileInput').value = '';
+    loadResources();
+  } catch(e) {
+    showUploadStatus('error', '❌ ' + e.message);
+  }
+}
+
+// ========== LINK ADD ==========
+async function addLink() {
+  const title = document.getElementById('linkTitle').value.trim();
+  const url = document.getElementById('linkUrl').value.trim();
+  const desc = document.getElementById('linkDesc').value.trim();
+  const tag = document.getElementById('linkTag').value.trim();
+  const uploader = document.getElementById('linkUploader').value.trim();
+
+  if (!title || !url) return showUploadStatus('error', '请填写链接标题和地址');
+  const c = getConfig();
+  if (!c.token) return showUploadStatus('error', '需要 GitHub Token 才能添加');
+
+  showUploadStatus('loading', '⏳ 正在添加...');
+
+  try {
+    // Get current links.json
+    const linksData = await ghGet('data/links.json');
+    const links = JSON.parse(atob(linksData.content.replace(/\n/g, '')));
+
+    links.push({ title, url, desc, tag, uploader, date: new Date().toISOString().slice(0,10) });
+
+    await ghPut(
+      'data/links.json',
+      btoa(unescape(encodeURIComponent(JSON.stringify(links, null, 2)))),
+      `添加链接: ${title}${uploader ? ' by ' + uploader : ''}`,
+      linksData.sha
+    );
+
+    showUploadStatus('success', '✅ 链接添加成功！');
+    document.getElementById('linkTitle').value = '';
+    document.getElementById('linkUrl').value = '';
+    document.getElementById('linkDesc').value = '';
+    document.getElementById('linkTag').value = '';
+    loadResources();
+  } catch(e) {
+    showUploadStatus('error', '❌ ' + e.message);
+  }
+}
+
+// ========== UI HELPERS ==========
+function openModal() { document.getElementById('modalOverlay').classList.add('show') }
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+  document.getElementById('uploadStatus').style.display = 'none';
+}
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tabFile').style.display = tab === 'file' ? 'block' : 'none';
+  document.getElementById('tabLink').style.display = tab === 'link' ? 'block' : 'none';
+}
+function filterByTag(tag) {
+  currentTag = tag;
+  document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  renderResources();
+}
+function filterResources() { renderResources() }
+function showUploadStatus(type, msg) {
+  const s = document.getElementById('uploadStatus');
+  s.className = 'status ' + type; s.textContent = msg; s.style.display = 'block';
+}
+
+// ========== UTILS ==========
+function formatSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+function getFileExtTag(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  const map = {
+    pdf:'文档',doc:'文档',docx:'文档',txt:'文档',md:'文档',
+    jpg:'图片',jpeg:'图片',png:'图片',gif:'图片',svg:'图片',webp:'图片',
+    mp4:'视频',avi:'视频',mov:'视频',mkv:'视频',
+    mp3:'音频',wav:'音频',flac:'音频',
+    zip:'压缩包',rar:'压缩包','7z':'压缩包',tar:'压缩包',gz:'压缩包',
+    py:'代码',js:'代码',html:'代码',css:'代码',java:'代码',cpp:'代码',
+    json:'数据',csv:'数据',xlsx:'数据',xls:'数据',
+    pptx:'演示',ppt:'演示',
+  };
+  return map[ext] || '其他';
+}
+function getDomain(url) {
+  try { return new URL(url).hostname; } catch { return url; }
+}
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ========== INIT ==========
+window.addEventListener('DOMContentLoaded', () => {
+  loadConfig();
+  const c = getConfig();
+  if (c.owner && c.repo) {
+    loadResources();
+  }
+});
+</script>
+
+</body>
+</html>
