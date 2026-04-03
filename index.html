@@ -385,6 +385,63 @@ font-family:‘Orbitron’;font-size:.8rem;letter-spacing:2px;
 .neon-magenta{color:var(--magenta);text-shadow:0 0 10px rgba(255,0,170,.4),0 0 20px rgba(255,0,170,.2)}
 .neon-purple{color:var(--purple);text-shadow:0 0 10px rgba(139,92,246,.4),0 0 20px rgba(139,92,246,.2)}
 
+/* Guide panel */
+.guide-panel{
+position:relative;z-index:10;margin:0 2rem;
+border-bottom:1px solid var(--border);
+}
+.guide-toggle{
+display:flex;align-items:center;gap:.5rem;padding:.8rem 0;
+cursor:pointer;font-weight:600;color:var(--yellow);
+font-family:'Orbitron';font-size:.8rem;letter-spacing:2px;
+background:none;border:none;width:100%;text-align:left;
+transition:.3s;
+}
+.guide-toggle:hover{color:var(--cyan)}
+.guide-toggle .arrow{transition:transform .3s;display:inline-block}
+.guide-toggle.open .arrow{transform:rotate(90deg)}
+.guide-content{
+max-height:0;overflow:hidden;transition:max-height .4s ease;
+}
+.guide-content.open{max-height:2000px}
+.guide-inner{
+padding:1rem 0 1.5rem;color:var(--text2);font-size:.9rem;line-height:1.8;
+}
+.guide-inner h3{
+color:var(--cyan);font-family:'Orbitron';font-size:.85rem;
+letter-spacing:1px;margin:1rem 0 .5rem;
+text-shadow:0 0 8px rgba(0,240,255,.2);
+}
+.guide-inner h3:first-child{margin-top:0}
+.guide-inner p{margin:.3rem 0}
+.guide-inner ul{margin:.3rem 0 .3rem 1.2rem}
+.guide-inner li{margin:.2rem 0}
+.guide-inner code{
+background:rgba(0,240,255,.08);color:var(--cyan);
+padding:.1rem .4rem;border-radius:3px;font-family:'Share Tech Mono';font-size:.82rem;
+}
+.guide-edit-bar{
+display:flex;gap:.5rem;padding:.5rem 0;justify-content:flex-end;
+}
+
+/* Post card */
+.card-icon.post{
+background:rgba(255,204,0,.1);color:var(--yellow);border:1px solid rgba(255,204,0,.25);
+box-shadow:0 0 12px rgba(255,204,0,.1);
+}
+.card-post-body{
+font-size:.9rem;color:var(--text);margin:.6rem 0;line-height:1.6;
+white-space:pre-wrap;word-break:break-word;
+}
+.btn-yellow{
+background:rgba(255,204,0,.08);color:var(--yellow);border-color:rgba(255,204,0,.3);
+}
+.btn-yellow:hover{background:rgba(255,204,0,.15);box-shadow:0 0 25px rgba(255,204,0,.25)}
+.btn-green{
+background:rgba(0,255,136,.08);color:var(--green);border-color:rgba(0,255,136,.3);
+}
+.btn-green:hover{background:rgba(0,255,136,.15);box-shadow:0 0 25px rgba(0,255,136,.25)}
+
 /* Scrollbar upgrade */
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:var(--bg)}
@@ -414,6 +471,7 @@ background:linear-gradient(180deg,var(--cyan),var(--magenta));
         <span class="search-icon">⌕</span>
         <input type="text" id="searchInput" placeholder="搜索资源..." oninput="filterResources()">
       </div>
+      <button class="btn btn-yellow" onclick="toggleGuide()" title="使用说明">? 说明</button>
     </div>
   </div>
 </div>
@@ -426,11 +484,27 @@ background:linear-gradient(180deg,var(--cyan),var(--magenta));
   <div id="settingsStatus" class="status"></div>
 </div>
 
+<!-- Usage Guide -->
+<div class="guide-panel" id="guidePanel" style="display:none">
+  <button class="guide-toggle open" onclick="toggleGuide()">
+    <span class="arrow">&#9654;</span> 使用说明 / USER GUIDE
+  </button>
+  <div class="guide-content open" id="guideContent">
+    <div class="guide-inner" id="guideInner">
+      <!-- Content loaded from data/guide.json -->
+    </div>
+    <div class="guide-edit-bar">
+      <button class="btn btn-yellow" onclick="openGuideEdit()">&#9998; 编辑说明</button>
+    </div>
+  </div>
+</div>
+
 <!-- Stats -->
 
 <div class="stats-bar">
   <div class="stat-item">📁 文件: <span id="fileCount">0</span></div>
   <div class="stat-item">🔗 链接: <span id="linkCount">0</span></div>
+  <div class="stat-item">📝 帖子: <span id="postCount">0</span></div>
   <div class="stat-item">📊 总计: <span id="totalCount">0</span></div>
 </div>
 
@@ -440,6 +514,7 @@ background:linear-gradient(180deg,var(--cyan),var(--magenta));
   <span class="tag active" onclick="filterByTag('all')">全部</span>
   <span class="tag" onclick="filterByTag('file')">📁 文件</span>
   <span class="tag" onclick="filterByTag('link')">🔗 链接</span>
+  <span class="tag" onclick="filterByTag('post')">📝 帖子</span>
 </div>
 
 <!-- Content -->
@@ -470,6 +545,7 @@ background:linear-gradient(180deg,var(--cyan),var(--magenta));
       <div class="tabs">
         <button class="tab active" onclick="switchTab('file')">📁 上传文件</button>
         <button class="tab" onclick="switchTab('link')">🔗 添加链接</button>
+        <button class="tab" onclick="switchTab('post')">📝 发帖</button>
       </div>
 
 ```
@@ -482,6 +558,10 @@ background:linear-gradient(180deg,var(--cyan),var(--magenta));
       <div class="file-name" id="fileName"></div>
     </div>
     <input type="file" id="fileInput" style="display:none" onchange="handleFile(this)">
+    <div class="form-group">
+      <label>文件描述（可选）</label>
+      <textarea id="fileDesc" placeholder="简要描述这个文件的用途..." rows="2"></textarea>
+    </div>
     <div class="form-group">
       <label>分类标签（可选）</label>
       <input type="text" id="fileTag" placeholder="例如：教程、模板、工具...">
@@ -522,6 +602,29 @@ background:linear-gradient(180deg,var(--cyan),var(--magenta));
     </button>
   </div>
 
+  <!-- Post Publish -->
+  <div id="tabPost" style="display:none">
+    <div class="form-group">
+      <label>帖子标题</label>
+      <input type="text" id="postTitle" placeholder="给帖子起个标题...">
+    </div>
+    <div class="form-group">
+      <label>帖子内容</label>
+      <textarea id="postBody" placeholder="写下你想分享的内容、教程、心得..." style="min-height:150px"></textarea>
+    </div>
+    <div class="form-group">
+      <label>分类标签（可选）</label>
+      <input type="text" id="postTag" placeholder="例如：教程、心得、技巧...">
+    </div>
+    <div class="form-group">
+      <label>发布者昵称</label>
+      <input type="text" id="postAuthor" placeholder="你的昵称">
+    </div>
+    <button class="btn btn-yellow" style="width:100%;justify-content:center" onclick="publishPost()">
+      ⚡ 发布帖子
+    </button>
+  </div>
+
   <div id="uploadStatus" class="status"></div>
 </div>
 ```
@@ -553,11 +656,63 @@ background:linear-gradient(180deg,var(--cyan),var(--magenta));
   </div>
 </div>
 
+<!-- Description Edit Modal -->
+
+<div class="modal-overlay" id="descModalOverlay" onclick="if(event.target===this)closeDescModal()">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h2>编辑文件描述</h2>
+      <button class="modal-close" onclick="closeDescModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text2);margin-bottom:.8rem;font-size:.85rem">
+        文件: <strong style="color:var(--text)" id="descFileName"></strong>
+      </p>
+      <div class="form-group">
+        <label>文件描述</label>
+        <textarea id="descEditArea" placeholder="描述这个文件的用途..." style="min-height:100px"></textarea>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-cyan" style="flex:1;justify-content:center" onclick="saveDesc()">&#10003; 保存</button>
+        <button class="btn btn-red" style="justify-content:center" onclick="clearDesc()">清除描述</button>
+      </div>
+      <div id="descStatus" class="status"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Guide Edit Modal -->
+
+<div class="modal-overlay" id="guideEditOverlay" onclick="if(event.target===this)closeGuideEdit()">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <h2>编辑使用说明</h2>
+      <button class="modal-close" onclick="closeGuideEdit()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>请输入管理员密码</label>
+        <input type="password" id="guideAdminPw" placeholder="管理员密码...">
+      </div>
+      <div class="form-group">
+        <label>说明内容（支持 HTML 标签：h3, p, ul, li, code）</label>
+        <textarea id="guideEditArea" style="min-height:250px;font-family:'Share Tech Mono';font-size:.82rem"></textarea>
+      </div>
+      <button class="btn btn-yellow" style="width:100%;justify-content:center" onclick="saveGuide()">&#10003; 保存说明</button>
+      <div id="guideEditStatus" class="status"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ========== STATE ==========
 let allResources = [];
+let fileMeta = {};
+let fileMetaSha = null;
 let selectedFile = null;
 let currentTag = 'all';
+let pendingDescIndex = null;
+let guideData = { content: '', sha: null };
 const API = 'https://api.github.com';
 
 // ========== CONFIG (Hardcoded) ==========
@@ -628,20 +783,29 @@ async function loadResources() {
   allResources = [];
 
   try {
+    // Load file metadata
+    try {
+      const metaData = await ghGet('data/meta.json');
+      fileMeta = JSON.parse(atob(metaData.content.replace(/\n/g, '')));
+      fileMetaSha = metaData.sha;
+    } catch(e) { fileMeta = {}; fileMetaSha = null; }
+
     // Load files
     try {
       const files = await ghGet('resources');
       if (Array.isArray(files)) {
         for (const f of files) {
           if (f.name === '.gitkeep') continue;
+          const meta = fileMeta[f.name] || {};
           allResources.push({
             type: 'file',
             name: f.name,
             size: f.size,
             url: f.download_url,
             sha: f.sha,
-            tag: getFileExtTag(f.name),
-            uploader: '',
+            tag: meta.tag || getFileExtTag(f.name),
+            uploader: meta.uploader || '',
+            desc: meta.desc || '',
           });
         }
       }
@@ -656,13 +820,35 @@ async function loadResources() {
       }
     } catch(e) { console.warn('No links.json yet'); }
 
+    // Load posts
+    try {
+      const postsData = await ghGet('data/posts.json');
+      const posts = JSON.parse(atob(postsData.content.replace(/\n/g, '')));
+      for (const p of posts) {
+        allResources.push({ type: 'post', ...p });
+      }
+    } catch(e) { console.warn('No posts.json yet'); }
+
+    // Load guide
+    loadGuide();
+
     renderResources();
     updateStats();
-    // Close settings if loaded successfully
-    if (allResources.length > 0) document.getElementById('settingsPanel').open = false;
 
   } catch(e) {
     grid.innerHTML = `<div class="empty"><div class="icon">⚠️</div><p>加载失败: ${e.message}</p></div>`;
+  }
+}
+
+async function loadGuide() {
+  try {
+    const gData = await ghGet('data/guide.json');
+    const parsed = JSON.parse(atob(gData.content.replace(/\n/g, '')));
+    guideData = { content: parsed.content || '', sha: gData.sha };
+    document.getElementById('guideInner').innerHTML = guideData.content;
+  } catch(e) {
+    guideData = { content: getDefaultGuide(), sha: null };
+    document.getElementById('guideInner').innerHTML = guideData.content;
   }
 }
 
@@ -672,10 +858,9 @@ function renderResources() {
   const search = document.getElementById('searchInput').value.toLowerCase();
 
   let filtered = allResources.filter(r => {
-    if (currentTag === 'file' && r.type !== 'file') return false;
-    if (currentTag === 'link' && r.type !== 'link') return false;
+    if (currentTag !== 'all' && r.type !== currentTag) return false;
     if (search) {
-      const text = `${r.name||''} ${r.title||''} ${r.desc||''} ${r.tag||''} ${r.uploader||''}`.toLowerCase();
+      const text = `${r.name||''} ${r.title||''} ${r.desc||''} ${r.body||''} ${r.tag||''} ${r.uploader||''} ${r.author||''}`.toLowerCase();
       return text.includes(search);
     }
     return true;
@@ -698,13 +883,15 @@ function renderResources() {
             <div class="card-meta">${size}${r.uploader ? ' · ' + esc(r.uploader) : ''}</div>
           </div>
         </div>
+        ${r.desc ? `<div class="card-desc">${esc(r.desc)}</div>` : ''}
         ${r.tag ? `<span class="card-tag">${esc(r.tag)}</span>` : ''}
         <div class="card-actions">
           <a href="${r.url}" target="_blank" class="btn btn-cyan" download>⬇ 下载</a>
+          <button class="btn btn-green" onclick="editDesc(${i})">&#9998; 描述</button>
           <button class="btn btn-red" onclick="deleteResource(${i})">🗑 删除</button>
         </div>
       </div>`;
-    } else {
+    } else if (r.type === 'link') {
       return `<div class="card" style="animation-delay:${i*0.04}s">
         <div class="card-header">
           <div class="card-icon link">🔗</div>
@@ -720,16 +907,34 @@ function renderResources() {
           <button class="btn btn-red" onclick="deleteResource(${i})">🗑 删除</button>
         </div>
       </div>`;
+    } else if (r.type === 'post') {
+      return `<div class="card" style="animation-delay:${i*0.04}s">
+        <div class="card-header">
+          <div class="card-icon post">📝</div>
+          <div>
+            <div class="card-title">${esc(r.title)}</div>
+            <div class="card-meta">${esc(r.author||'')}${r.date ? ' · ' + r.date : ''}</div>
+          </div>
+        </div>
+        <div class="card-post-body">${esc(r.body)}</div>
+        ${r.tag ? `<span class="card-tag">${esc(r.tag)}</span>` : ''}
+        <div class="card-actions">
+          <button class="btn btn-red" onclick="deleteResource(${i})">🗑 删除</button>
+        </div>
+      </div>`;
     }
+    return '';
   }).join('');
 }
 
 function updateStats() {
   const files = allResources.filter(r => r.type === 'file').length;
   const links = allResources.filter(r => r.type === 'link').length;
+  const posts = allResources.filter(r => r.type === 'post').length;
   document.getElementById('fileCount').textContent = files;
   document.getElementById('linkCount').textContent = links;
-  document.getElementById('totalCount').textContent = files + links;
+  document.getElementById('postCount').textContent = posts;
+  document.getElementById('totalCount').textContent = files + links + posts;
 }
 
 // ========== FILE UPLOAD ==========
@@ -763,6 +968,7 @@ async function uploadFile() {
 
   try {
     const base64 = await fileToBase64(selectedFile);
+    const desc = document.getElementById('fileDesc').value.trim();
     const tag = document.getElementById('fileTag').value.trim();
     const uploader = document.getElementById('fileUploader').value.trim();
     const fileName = sanitizeFileName(selectedFile.name);
@@ -772,6 +978,12 @@ async function uploadFile() {
       base64,
       `上传文件: ${fileName}${uploader ? ' by ' + uploader : ''}`
     );
+
+    // Save file metadata
+    if (desc || tag || uploader) {
+      fileMeta[fileName] = { desc, tag: tag || getFileExtTag(fileName), uploader };
+      await saveFileMeta(`更新文件元数据: ${fileName}`);
+    }
 
     showUploadStatus('success', '✅ 文件上传成功！');
     selectedFile = null;
@@ -833,6 +1045,7 @@ function switchTab(tab) {
   event.target.classList.add('active');
   document.getElementById('tabFile').style.display = tab === 'file' ? 'block' : 'none';
   document.getElementById('tabLink').style.display = tab === 'link' ? 'block' : 'none';
+  document.getElementById('tabPost').style.display = tab === 'post' ? 'block' : 'none';
 }
 function filterByTag(tag) {
   currentTag = tag;
@@ -890,6 +1103,201 @@ function fileToBase64(file) {
   });
 }
 
+// ========== FILE META (Descriptions) ==========
+async function saveFileMeta(message) {
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(fileMeta, null, 2))));
+  const result = await ghPut('data/meta.json', encoded, message, fileMetaSha);
+  fileMetaSha = result.content.sha;
+}
+
+function editDesc(index) {
+  const filtered = getFilteredResources();
+  const r = filtered[index];
+  if (r.type !== 'file') return;
+  pendingDescIndex = allResources.indexOf(r);
+  document.getElementById('descFileName').textContent = r.name;
+  document.getElementById('descEditArea').value = r.desc || '';
+  document.getElementById('descStatus').className = 'status';
+  document.getElementById('descStatus').style.display = 'none';
+  document.getElementById('descModalOverlay').classList.add('show');
+}
+
+function closeDescModal() {
+  document.getElementById('descModalOverlay').classList.remove('show');
+  pendingDescIndex = null;
+}
+
+function showDescStatus(type, msg) {
+  const s = document.getElementById('descStatus');
+  s.className = 'status ' + type; s.textContent = msg; s.style.display = 'block';
+}
+
+async function saveDesc() {
+  const r = allResources[pendingDescIndex];
+  if (!r) return;
+  const desc = document.getElementById('descEditArea').value.trim();
+  showDescStatus('loading', '⏳ 正在保存...');
+  try {
+    const meta = fileMeta[r.name] || {};
+    meta.desc = desc;
+    meta.tag = meta.tag || r.tag;
+    meta.uploader = meta.uploader || r.uploader;
+    fileMeta[r.name] = meta;
+    await saveFileMeta(`更新描述: ${r.name}`);
+    r.desc = desc;
+    showDescStatus('success', '✅ 描述已保存！');
+    setTimeout(() => { closeDescModal(); renderResources(); }, 600);
+  } catch(e) {
+    showDescStatus('error', '❌ ' + e.message);
+  }
+}
+
+async function clearDesc() {
+  const r = allResources[pendingDescIndex];
+  if (!r) return;
+  showDescStatus('loading', '⏳ 正在清除...');
+  try {
+    if (fileMeta[r.name]) {
+      fileMeta[r.name].desc = '';
+      await saveFileMeta(`清除描述: ${r.name}`);
+    }
+    r.desc = '';
+    showDescStatus('success', '✅ 描述已清除！');
+    setTimeout(() => { closeDescModal(); renderResources(); }, 600);
+  } catch(e) {
+    showDescStatus('error', '❌ ' + e.message);
+  }
+}
+
+// ========== POSTS ==========
+async function publishPost() {
+  const title = document.getElementById('postTitle').value.trim();
+  const body = document.getElementById('postBody').value.trim();
+  const tag = document.getElementById('postTag').value.trim();
+  const author = document.getElementById('postAuthor').value.trim();
+
+  if (!title || !body) return showUploadStatus('error', '请填写帖子标题和内容');
+  const c = getConfig();
+  if (!c.token) return showUploadStatus('error', '需要 GitHub Token');
+
+  showUploadStatus('loading', '⏳ 正在发布...');
+
+  try {
+    let posts = [];
+    let postsSha = null;
+    try {
+      const postsData = await ghGet('data/posts.json');
+      posts = JSON.parse(atob(postsData.content.replace(/\n/g, '')));
+      postsSha = postsData.sha;
+    } catch(e) {}
+
+    posts.unshift({ title, body, tag, author, date: new Date().toISOString().slice(0,10) });
+
+    await ghPut(
+      'data/posts.json',
+      btoa(unescape(encodeURIComponent(JSON.stringify(posts, null, 2)))),
+      `发布帖子: ${title}${author ? ' by ' + author : ''}`,
+      postsSha
+    );
+
+    showUploadStatus('success', '✅ 帖子发布成功！');
+    document.getElementById('postTitle').value = '';
+    document.getElementById('postBody').value = '';
+    document.getElementById('postTag').value = '';
+    loadResources();
+  } catch(e) {
+    showUploadStatus('error', '❌ ' + e.message);
+  }
+}
+
+// ========== GUIDE ==========
+function getDefaultGuide() {
+  return `<h3>&#128640; 欢迎来到 Tech Resource Hub</h3>
+<p>这是一个为 <strong>人机恋技术社区</strong> 打造的资源共享平台，所有人都可以在这里上传和下载技术资源。</p>
+
+<h3>&#128196; 如何使用</h3>
+<ul>
+  <li>点击右下角的 <code>+</code> 按钮即可上传文件、添加链接或发布帖子</li>
+  <li>使用顶部搜索栏可以快速搜索资源</li>
+  <li>点击标签栏的「文件」「链接」「帖子」可以按类型筛选</li>
+  <li>每个文件卡片上的「描述」按钮可以为文件添加说明</li>
+</ul>
+
+<h3>&#128193; 支持的资源类型</h3>
+<ul>
+  <li><strong>文件上传</strong> — 支持所有格式，包括文档、图片、代码、压缩包等</li>
+  <li><strong>链接分享</strong> — 分享有用的网址、教程链接、工具链接等</li>
+  <li><strong>文字帖子</strong> — 直接发布文字教程、心得分享、技术笔记</li>
+</ul>
+
+<h3>&#128272; 管理功能</h3>
+<ul>
+  <li>删除资源需要输入管理员密码</li>
+  <li>本说明页面也可以由管理员编辑更新</li>
+</ul>
+
+<h3>&#128161; 小贴士</h3>
+<ul>
+  <li>上传文件时建议添加描述和标签，方便其他人检索</li>
+  <li>文件名中的特殊字符会被自动清理为安全字符</li>
+  <li>发帖功能非常适合分享步骤教程和经验总结</li>
+</ul>`;
+}
+
+function toggleGuide() {
+  const panel = document.getElementById('guidePanel');
+  const content = document.getElementById('guideContent');
+  const toggle = panel.querySelector('.guide-toggle');
+  if (panel.style.display === 'none') {
+    panel.style.display = 'block';
+    content.classList.add('open');
+    toggle.classList.add('open');
+  } else {
+    panel.style.display = 'none';
+    content.classList.remove('open');
+    toggle.classList.remove('open');
+  }
+}
+
+function openGuideEdit() {
+  document.getElementById('guideEditArea').value = guideData.content;
+  document.getElementById('guideAdminPw').value = '';
+  document.getElementById('guideEditStatus').className = 'status';
+  document.getElementById('guideEditStatus').style.display = 'none';
+  document.getElementById('guideEditOverlay').classList.add('show');
+}
+
+function closeGuideEdit() {
+  document.getElementById('guideEditOverlay').classList.remove('show');
+}
+
+function showGuideEditStatus(type, msg) {
+  const s = document.getElementById('guideEditStatus');
+  s.className = 'status ' + type; s.textContent = msg; s.style.display = 'block';
+}
+
+async function saveGuide() {
+  const pw = document.getElementById('guideAdminPw').value;
+  if (!pw) return showGuideEditStatus('error', '请输入管理员密码');
+  const hash = await sha256(pw);
+  if (hash !== ADMIN_HASH) return showGuideEditStatus('error', '❌ 密码错误，你不是管理员喵~');
+
+  const content = document.getElementById('guideEditArea').value;
+  showGuideEditStatus('loading', '⏳ 正在保存...');
+
+  try {
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify({ content }, null, 2))));
+    const result = await ghPut('data/guide.json', encoded, '更新使用说明', guideData.sha);
+    guideData.content = content;
+    guideData.sha = result.content.sha;
+    document.getElementById('guideInner').innerHTML = content;
+    showGuideEditStatus('success', '✅ 使用说明已更新！');
+    setTimeout(() => closeGuideEdit(), 800);
+  } catch(e) {
+    showGuideEditStatus('error', '❌ ' + e.message);
+  }
+}
+
 // ========== DELETE (Admin Only) ==========
 const ADMIN_HASH = 'c13e21031a718d6517039f7ce24e26fbc6d09662f07018cf742d1b369d73e5c9';
 let pendingDeleteIndex = null;
@@ -904,7 +1312,7 @@ function deleteResource(index) {
   const filtered = getFilteredResources();
   const r = filtered[index];
   pendingDeleteIndex = allResources.indexOf(r);
-  document.getElementById('deleteResourceName').textContent = r.name || r.title || '';
+  document.getElementById('deleteResourceName').textContent = r.name || r.title || r.body?.slice(0,30) || '';
   document.getElementById('adminPassword').value = '';
   document.getElementById('deleteStatus').className = 'status';
   document.getElementById('deleteStatus').style.display = 'none';
@@ -915,10 +1323,9 @@ function deleteResource(index) {
 function getFilteredResources() {
   const search = document.getElementById('searchInput').value.toLowerCase();
   return allResources.filter(r => {
-    if (currentTag === 'file' && r.type !== 'file') return false;
-    if (currentTag === 'link' && r.type !== 'link') return false;
+    if (currentTag !== 'all' && r.type !== currentTag) return false;
     if (search) {
-      const text = `${r.name||''} ${r.title||''} ${r.desc||''} ${r.tag||''} ${r.uploader||''}`.toLowerCase();
+      const text = `${r.name||''} ${r.title||''} ${r.desc||''} ${r.body||''} ${r.tag||''} ${r.uploader||''} ${r.author||''}`.toLowerCase();
       return text.includes(search);
     }
     return true;
@@ -973,6 +1380,18 @@ async function confirmDelete() {
         btoa(unescape(encodeURIComponent(JSON.stringify(links, null, 2)))),
         `删除链接: ${r.title || r.url}`,
         linksData.sha
+      );
+    } else if (r.type === 'post') {
+      // Remove post from posts.json
+      const postsData = await ghGet('data/posts.json');
+      const posts = JSON.parse(atob(postsData.content.replace(/\n/g, '')));
+      const idx = posts.findIndex(p => p.title === r.title && p.date === r.date && p.body === r.body);
+      if (idx !== -1) posts.splice(idx, 1);
+      await ghPut(
+        'data/posts.json',
+        btoa(unescape(encodeURIComponent(JSON.stringify(posts, null, 2)))),
+        `删除帖子: ${r.title}`,
+        postsData.sha
       );
     }
 
