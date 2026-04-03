@@ -33,5 +33,10 @@
     "desc": "小点心老师制作分享",
     "tag": "文档",
     "uploader": ""
+  },
+  "toy_tutorial_.pdf": {
+    "desc": "本教程适合不支持intiface的toy~ 以上仅为连接教程，脚本教程需自行搜索，或让小机指导~",
+    "tag": "教程",
+    "uploader": "无尽夏"
   }
 }
