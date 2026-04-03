@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON → Tavo JSONL 转换</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0; padding:10px; background:#f5f5f5; font-family:system-ui, sans-serif;}
+.container{display:flex; flex-direction:column; gap:10px; height:100vh; max-width:100%;}
+textarea{width:100%; border-radius:8px; padding:12px; border:1px solid #ccc; font-size:14px; resize:none;}
+#input{flex:1; min-height:30vh;}
+#output{flex:1.5; min-height:40vh; background:#fffbe6;}
+.buttons{display:flex; gap:8px;}
+button{flex:1; padding:12px 0; border:none; border-radius:8px; background:#4e6ef2; color:white; font-size:16px; font-weight:500;}
+button.copy{background:#2a9134;}
+h4{margin:4px 0; font-size:14px; color:#333;}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h4>📥 粘贴你导出的原始 JSON（整个放这里）</h4>
+  <textarea id="input" placeholder="把你的大JSON整个粘贴进来"></textarea>
+
+  <div class="buttons">
+    <button onclick="doConvert()">转换为 Tavo JSONL</button>
+    <button class="copy" onclick="copyOutput()">复制结果</button>
+  </div>
+
+  <h4>📤 转换好的 Tavo 格式（直接导入用）</h4>
+  <textarea id="output" readonly placeholder="点转换后结果在这里"></textarea>
+</div>
+
+<script>
+function doConvert() {
+  const input = document.getElementById('input').value.trim();
+  const output = document.getElementById('output');
+
+  if (!input) {
+    alert('请先粘贴JSON');
+    return;
+  }
+
+  try {
+    const data = JSON.parse(input);
+    const history = data.history || [];
+
+    const YOUR_NAME = "{{user}}";
+    const AI_NAME = "{{char}}";
+    const fixedTime = "2026-04-01T00:00:00.000";
+
+    const lines = [];
+
+    // Tavo 头部
+    const head = {
+      user_name: YOUR_NAME,
+      character_name: AI_NAME,
+      create_date: "2026-04-01@00h00m00s",
+      chat_metadata: {}
+    };
+    lines.push(JSON.stringify(head));
+
+    // 逐条转消息
+    for (const item of history) {
+      const role = item.role;
+      const content = item.content || '';
+
+      if (role === 'system') continue;
+
+      let msg;
+      if (role === 'user') {
+        msg = {
+          name: YOUR_NAME,
+          is_user: true,
+          is_system: false,
+          send_date: fixedTime,
+          mes: content,
+          original_avatar: "",
+          extra: {}
+        };
+      } else if (role === 'assistant') {
+        msg = {
+          name: AI_NAME,
+          is_user: false,
+          is_system: false,
+          send_date: fixedTime,
+          mes: content,
+          original_avatar: "",
+          extra: {}
+        };
+      } else {
+        continue;
+      }
+
+      lines.push(JSON.stringify(msg));
+    }
+
+    output.value = lines.join('\n');
+  } catch (e) {
+    alert('解析失败：不是合法JSON\n' + e.message);
+    output.value = '';
+  }
+}
+
+function copyOutput() {
+  const output = document.getElementById('output');
+  if (!output.value) {
+    alert('先转换才有内容');
+    return;
+  }
+  output.select();
+  document.execCommand('copy');
+  alert('已复制！直接去 Tavo 粘贴/导入即可');
+}
+</script>
+</body>
+</html>
