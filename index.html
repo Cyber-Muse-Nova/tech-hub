@@ -1010,9 +1010,16 @@ async function addLink() {
   showUploadStatus('loading', '⏳ 正在添加...');
 
   try {
-    // Get current links.json
-    const linksData = await ghGet('data/links.json');
-    const links = JSON.parse(utf8Decode(linksData.content.replace(/\n/g, '')));
+    // Get current links.json (create if not exists)
+    let links = [];
+    let linksSha = null;
+    try {
+      const linksData = await ghGet('data/links.json');
+      links = JSON.parse(utf8Decode(linksData.content.replace(/\n/g, '')));
+      linksSha = linksData.sha;
+    } catch(e) {
+      // links.json doesn't exist yet, start with empty array
+    }
 
     links.push({ title, url, desc, tag, uploader, date: new Date().toISOString().slice(0,10) });
 
@@ -1020,7 +1027,7 @@ async function addLink() {
       'data/links.json',
       utf8Encode(JSON.stringify(links, null, 2)),
       `添加链接: ${title}${uploader ? ' by ' + uploader : ''}`,
-      linksData.sha
+      linksSha
     );
 
     showUploadStatus('success', '✅ 链接添加成功！');
