@@ -22,5 +22,13 @@
     "tag": "",
     "uploader": "鹅鹅",
     "date": "2026-04-12"
+  },
+  {
+    "title": "Claude对话查看、总结、导出",
+    "url": "https://sssssssynqa.github.io/claude-conversation-viewer/",
+    "desc": "上传 Claude 导出的 JSON 文件，回顾和整理你与Claude的每一段对话",
+    "tag": "工具",
+    "uploader": "鹅鹅",
+    "date": "2026-04-12"
   }
 ]
