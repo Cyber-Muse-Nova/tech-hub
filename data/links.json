@@ -6,5 +6,13 @@
     "tag": "网址",
     "uploader": "熊",
     "date": "2026-04-11"
+  },
+  {
+    "title": "让Claude连接微信——查历史记录、监听新消息、实时聊天",
+    "url": "https://github.com/SsssssSynqa/WeChat-ClaudeCode-MCP",
+    "desc": "MCP Server、消息轮询 + 发送、 、微信 ClawBot 实时聊天",
+    "tag": "工具",
+    "uploader": "鹅鹅",
+    "date": "2026-04-12"
   }
 ]
