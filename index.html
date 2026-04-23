@@ -442,6 +442,91 @@ background:rgba(0,255,136,.08);color:var(--green);border-color:rgba(0,255,136,.3
 }
 .btn-green:hover{background:rgba(0,255,136,.15);box-shadow:0 0 25px rgba(0,255,136,.25)}
 
+/* Comments on card */
+.card-comment-toggle{
+background:rgba(0,240,255,.06);color:var(--cyan);border:1px solid rgba(0,240,255,.2);
+padding:.35rem .8rem;border-radius:6px;font-size:.75rem;cursor:pointer;
+font-family:'Rajdhani';font-weight:600;transition:.3s;letter-spacing:.5px;
+display:inline-flex;align-items:center;gap:.35rem;
+}
+.card-comment-toggle:hover{background:rgba(0,240,255,.12);box-shadow:0 0 15px rgba(0,240,255,.2)}
+.card-comment-toggle .count{
+background:rgba(0,240,255,.15);color:var(--cyan);padding:.05rem .4rem;border-radius:8px;
+font-size:.7rem;font-family:'Share Tech Mono';
+}
+.comments-section{
+margin-top:.8rem;padding-top:.8rem;border-top:1px dashed var(--border);
+display:none;
+}
+.comments-section.open{display:block}
+.comment-item{
+background:rgba(6,6,14,.5);border:1px solid var(--border);border-radius:8px;
+padding:.6rem .8rem;margin-bottom:.5rem;position:relative;
+}
+.comment-meta{
+display:flex;justify-content:space-between;align-items:center;
+font-size:.72rem;color:var(--text2);margin-bottom:.3rem;
+font-family:'Share Tech Mono',monospace;
+}
+.comment-author{color:var(--cyan);font-weight:600;text-shadow:0 0 6px rgba(0,240,255,.2)}
+.comment-body{
+font-size:.85rem;color:var(--text);line-height:1.5;white-space:pre-wrap;word-break:break-word;
+}
+.comment-del{
+background:none;border:none;color:var(--text2);cursor:pointer;font-size:.9rem;
+padding:0 .3rem;transition:.3s;
+}
+.comment-del:hover{color:var(--red);text-shadow:0 0 8px rgba(255,68,68,.4)}
+.comment-form{
+display:flex;flex-direction:column;gap:.4rem;margin-top:.5rem;
+padding:.6rem;background:rgba(6,6,14,.6);border:1px solid var(--border);border-radius:8px;
+}
+.comment-form input,.comment-form textarea{
+background:rgba(6,6,14,.8);border:1px solid var(--border);border-radius:5px;
+padding:.4rem .6rem;color:var(--text);font-family:'Rajdhani';font-size:.85rem;
+outline:none;transition:.3s;
+}
+.comment-form input:focus,.comment-form textarea:focus{
+border-color:var(--cyan);box-shadow:0 0 10px rgba(0,240,255,.15);
+}
+.comment-form textarea{resize:vertical;min-height:50px}
+.comment-form-actions{display:flex;justify-content:flex-end;gap:.4rem}
+.comment-empty{
+text-align:center;color:var(--text2);font-size:.8rem;padding:.5rem;font-style:italic;
+}
+
+/* Message Board */
+.msgboard-body{padding:0}
+.msgboard-list{
+max-height:50vh;overflow-y:auto;padding:1rem 1.5rem;
+border-bottom:1px solid var(--border);
+}
+.msgboard-form{padding:1rem 1.5rem;background:rgba(6,6,14,.4)}
+.msgboard-empty{
+text-align:center;color:var(--text2);padding:2rem 1rem;font-size:.9rem;
+}
+.msg-item{
+background:linear-gradient(135deg,rgba(139,92,246,.05),rgba(0,240,255,.03));
+border:1px solid var(--border);border-radius:10px;
+padding:.8rem 1rem;margin-bottom:.8rem;position:relative;
+transition:.3s;
+}
+.msg-item:hover{border-color:rgba(139,92,246,.3)}
+.msg-header{
+display:flex;justify-content:space-between;align-items:center;
+margin-bottom:.4rem;font-family:'Share Tech Mono',monospace;font-size:.75rem;
+}
+.msg-author{color:var(--magenta);font-weight:600;text-shadow:0 0 6px rgba(255,0,170,.25)}
+.msg-date{color:var(--text2)}
+.msg-body{
+font-size:.9rem;color:var(--text);line-height:1.6;white-space:pre-wrap;word-break:break-word;
+}
+.msg-del{
+position:absolute;top:.5rem;right:.5rem;background:none;border:none;
+color:var(--text2);cursor:pointer;font-size:.85rem;transition:.3s;
+}
+.msg-del:hover{color:var(--red);text-shadow:0 0 8px rgba(255,68,68,.4)}
+
 /* Scrollbar upgrade */
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:var(--bg)}
@@ -472,6 +557,7 @@ background:linear-gradient(180deg,var(--cyan),var(--magenta));
         <input type="text" id="searchInput" placeholder="搜索资源..." oninput="filterResources()">
       </div>
       <button class="btn btn-yellow" onclick="toggleGuide()" title="使用说明">? 说明</button>
+      <button class="btn btn-magenta" onclick="openMsgBoard()" title="留言板">💬 留言板</button>
     </div>
   </div>
 </div>
@@ -505,6 +591,7 @@ background:linear-gradient(180deg,var(--cyan),var(--magenta));
   <div class="stat-item">📁 文件: <span id="fileCount">0</span></div>
   <div class="stat-item">🔗 链接: <span id="linkCount">0</span></div>
   <div class="stat-item">📝 帖子: <span id="postCount">0</span></div>
+  <div class="stat-item">💬 留言: <span id="msgCount">0</span></div>
   <div class="stat-item">📊 总计: <span id="totalCount">0</span></div>
 </div>
 
@@ -681,6 +768,60 @@ background:linear-gradient(180deg,var(--cyan),var(--magenta));
   </div>
 </div>
 
+<!-- Message Board Modal -->
+
+<div class="modal-overlay" id="msgBoardOverlay" onclick="if(event.target===this)closeMsgBoard()">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <h2>💬 留言板 / MESSAGE BOARD</h2>
+      <button class="modal-close" onclick="closeMsgBoard()">✕</button>
+    </div>
+    <div class="modal-body msgboard-body">
+      <div class="msgboard-list" id="msgBoardList">
+        <div class="msgboard-empty">⏳ 加载中...</div>
+      </div>
+      <div class="msgboard-form">
+        <div class="form-group">
+          <label>你的昵称</label>
+          <input type="text" id="msgAuthor" placeholder="你的昵称" maxlength="30">
+        </div>
+        <div class="form-group">
+          <label>留言内容</label>
+          <textarea id="msgBody" placeholder="写下你想说的话..." style="min-height:80px" maxlength="1000"></textarea>
+        </div>
+        <button class="btn btn-magenta" style="width:100%;justify-content:center" onclick="submitMessage()">
+          ⚡ 发布留言
+        </button>
+        <div id="msgStatus" class="status"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Message/Comment Delete Modal -->
+
+<div class="modal-overlay" id="cmDeleteOverlay" onclick="if(event.target===this)closeCmDelete()">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h2 style="color:#ff4444">删除</h2>
+      <button class="modal-close" onclick="closeCmDelete()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text2);margin-bottom:1rem;font-size:.9rem" id="cmDeleteLabel">
+        确定要删除这条内容吗？
+      </p>
+      <div class="form-group">
+        <label>请输入管理员密码</label>
+        <input type="password" id="cmAdminPw" placeholder="管理员密码..." onkeydown="if(event.key==='Enter')confirmCmDelete()">
+      </div>
+      <button class="btn btn-red" style="width:100%;justify-content:center" onclick="confirmCmDelete()">
+        🗑 确认删除
+      </button>
+      <div id="cmDeleteStatus" class="status"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Guide Edit Modal -->
 
 <div class="modal-overlay" id="guideEditOverlay" onclick="if(event.target===this)closeGuideEdit()">
@@ -713,6 +854,12 @@ let selectedFile = null;
 let currentTag = 'all';
 let pendingDescIndex = null;
 let guideData = { content: '', sha: null };
+let commentsData = {};
+let commentsSha = null;
+let messagesData = [];
+let messagesSha = null;
+let openCommentCards = new Set();
+let pendingCmDelete = null; // { kind: 'comment'|'message', ... }
 const API = 'https://api.github.com';
 
 // ========== CONFIG (Hardcoded) ==========
@@ -829,6 +976,20 @@ async function loadResources() {
       }
     } catch(e) { console.warn('No posts.json yet'); }
 
+    // Load comments
+    try {
+      const cData = await ghGet('data/comments.json');
+      commentsData = JSON.parse(utf8Decode(cData.content.replace(/\n/g, '')));
+      commentsSha = cData.sha;
+    } catch(e) { commentsData = {}; commentsSha = null; }
+
+    // Load messages
+    try {
+      const mData = await ghGet('data/messages.json');
+      messagesData = JSON.parse(utf8Decode(mData.content.replace(/\n/g, '')));
+      messagesSha = mData.sha;
+    } catch(e) { messagesData = []; messagesSha = null; }
+
     // Load guide
     loadGuide();
 
@@ -872,6 +1033,36 @@ function renderResources() {
   }
 
   grid.innerHTML = filtered.map((r, i) => {
+    const rid = getResourceId(r);
+    const cmts = commentsData[rid] || [];
+    const cmtCount = cmts.length;
+    const open = openCommentCards.has(rid);
+    const commentsBlock = `
+      <div class="comments-section${open ? ' open' : ''}" id="cmt-section-${cssEsc(rid)}">
+        ${cmts.length === 0
+          ? '<div class="comment-empty">还没有评论，来留下第一条吧~</div>'
+          : cmts.map((c, ci) => `
+            <div class="comment-item">
+              <div class="comment-meta">
+                <span class="comment-author">${esc(c.author || '匿名')}</span>
+                <span>
+                  <span>${esc(c.date || '')}</span>
+                  <button class="comment-del" onclick="deleteComment('${jsEsc(rid)}', ${ci})" title="删除">🗑</button>
+                </span>
+              </div>
+              <div class="comment-body">${esc(c.body || '')}</div>
+            </div>
+          `).join('')}
+        <div class="comment-form">
+          <input type="text" placeholder="昵称" id="cmt-author-${cssEsc(rid)}" maxlength="30">
+          <textarea placeholder="写下你的评论..." id="cmt-body-${cssEsc(rid)}" maxlength="500"></textarea>
+          <div class="comment-form-actions">
+            <button class="btn btn-cyan" style="font-size:.75rem;padding:.35rem .8rem" onclick="addComment('${jsEsc(rid)}')">⚡ 发送评论</button>
+          </div>
+          <div class="status" id="cmt-status-${cssEsc(rid)}"></div>
+        </div>
+      </div>`;
+
     if (r.type === 'file') {
       const ext = r.name.split('.').pop().toUpperCase();
       const size = formatSize(r.size);
@@ -888,8 +1079,10 @@ function renderResources() {
         <div class="card-actions">
           <a href="${r.url}" target="_blank" class="btn btn-cyan" download>⬇ 下载</a>
           <button class="btn btn-green" onclick="editDesc(${i})">&#9998; 描述</button>
+          <button class="card-comment-toggle" onclick="toggleComments('${jsEsc(rid)}')">💬 评论 <span class="count">${cmtCount}</span></button>
           <button class="btn btn-red" onclick="deleteResource(${i})">🗑 删除</button>
         </div>
+        ${commentsBlock}
       </div>`;
     } else if (r.type === 'link') {
       return `<div class="card" style="animation-delay:${i*0.04}s">
@@ -904,8 +1097,10 @@ function renderResources() {
         ${r.tag ? `<span class="card-tag">${esc(r.tag)}</span>` : ''}
         <div class="card-actions">
           <a href="${esc(r.url)}" target="_blank" class="btn btn-purple">↗ 打开链接</a>
+          <button class="card-comment-toggle" onclick="toggleComments('${jsEsc(rid)}')">💬 评论 <span class="count">${cmtCount}</span></button>
           <button class="btn btn-red" onclick="deleteResource(${i})">🗑 删除</button>
         </div>
+        ${commentsBlock}
       </div>`;
     } else if (r.type === 'post') {
       return `<div class="card" style="animation-delay:${i*0.04}s">
@@ -919,21 +1114,213 @@ function renderResources() {
         <div class="card-post-body">${esc(r.body)}</div>
         ${r.tag ? `<span class="card-tag">${esc(r.tag)}</span>` : ''}
         <div class="card-actions">
+          <button class="card-comment-toggle" onclick="toggleComments('${jsEsc(rid)}')">💬 评论 <span class="count">${cmtCount}</span></button>
           <button class="btn btn-red" onclick="deleteResource(${i})">🗑 删除</button>
         </div>
+        ${commentsBlock}
       </div>`;
     }
     return '';
   }).join('');
 }
 
+// ========== COMMENTS ==========
+function getResourceId(r) {
+  if (r.type === 'file') return 'file:' + r.name;
+  if (r.type === 'link') return 'link:' + (r.url || '') + '|' + (r.title || '');
+  if (r.type === 'post') return 'post:' + (r.title || '') + '|' + (r.date || '');
+  return 'unknown';
+}
+
+function cssEsc(s) {
+  return (s || '').replace(/[^a-zA-Z0-9_-]/g, c => '_' + c.charCodeAt(0).toString(16));
+}
+
+function jsEsc(s) {
+  return (s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, '\\n');
+}
+
+function toggleComments(rid) {
+  if (openCommentCards.has(rid)) openCommentCards.delete(rid);
+  else openCommentCards.add(rid);
+  const sec = document.getElementById('cmt-section-' + cssEsc(rid));
+  if (sec) sec.classList.toggle('open');
+}
+
+async function saveComments(message) {
+  const encoded = utf8Encode(JSON.stringify(commentsData, null, 2));
+  const result = await ghPut('data/comments.json', encoded, message, commentsSha);
+  commentsSha = result.content.sha;
+}
+
+function showCmtStatus(rid, type, msg) {
+  const s = document.getElementById('cmt-status-' + cssEsc(rid));
+  if (!s) return;
+  s.className = 'status ' + type; s.textContent = msg; s.style.display = 'block';
+}
+
+async function addComment(rid) {
+  const authorEl = document.getElementById('cmt-author-' + cssEsc(rid));
+  const bodyEl = document.getElementById('cmt-body-' + cssEsc(rid));
+  const author = (authorEl.value || '').trim() || '匿名';
+  const body = (bodyEl.value || '').trim();
+  if (!body) return showCmtStatus(rid, 'error', '请输入评论内容');
+  const c = getConfig();
+  if (!c.token) return showCmtStatus(rid, 'error', '需要 GitHub Token');
+
+  showCmtStatus(rid, 'loading', '⏳ 正在发送...');
+  try {
+    if (!Array.isArray(commentsData[rid])) commentsData[rid] = [];
+    commentsData[rid].push({
+      author, body,
+      date: nowStamp()
+    });
+    await saveComments(`新增评论 on ${rid} by ${author}`);
+    openCommentCards.add(rid);
+    showCmtStatus(rid, 'success', '✅ 评论已发送');
+    renderResources();
+  } catch(e) {
+    showCmtStatus(rid, 'error', '❌ ' + e.message);
+  }
+}
+
+function deleteComment(rid, ci) {
+  const list = commentsData[rid] || [];
+  const c = list[ci];
+  if (!c) return;
+  pendingCmDelete = { kind: 'comment', rid, index: ci };
+  document.getElementById('cmDeleteLabel').textContent = `确定删除来自 "${c.author || '匿名'}" 的评论？`;
+  document.getElementById('cmAdminPw').value = '';
+  document.getElementById('cmDeleteStatus').className = 'status';
+  document.getElementById('cmDeleteStatus').style.display = 'none';
+  document.getElementById('cmDeleteOverlay').classList.add('show');
+  setTimeout(() => document.getElementById('cmAdminPw').focus(), 100);
+}
+
+function closeCmDelete() {
+  document.getElementById('cmDeleteOverlay').classList.remove('show');
+  pendingCmDelete = null;
+}
+
+function showCmDeleteStatus(type, msg) {
+  const s = document.getElementById('cmDeleteStatus');
+  s.className = 'status ' + type; s.textContent = msg; s.style.display = 'block';
+}
+
+async function confirmCmDelete() {
+  const pw = document.getElementById('cmAdminPw').value;
+  if (!pw) return showCmDeleteStatus('error', '请输入管理员密码');
+  const hash = await sha256(pw);
+  if (hash !== ADMIN_HASH) return showCmDeleteStatus('error', '❌ 密码错误');
+  if (!pendingCmDelete) return;
+
+  showCmDeleteStatus('loading', '⏳ 正在删除...');
+  try {
+    if (pendingCmDelete.kind === 'comment') {
+      const { rid, index } = pendingCmDelete;
+      const list = commentsData[rid] || [];
+      list.splice(index, 1);
+      if (list.length === 0) delete commentsData[rid];
+      await saveComments(`删除评论 on ${rid}`);
+      renderResources();
+    } else if (pendingCmDelete.kind === 'message') {
+      const { index } = pendingCmDelete;
+      messagesData.splice(index, 1);
+      await saveMessages('删除留言');
+      renderMessages();
+      updateStats();
+    }
+    showCmDeleteStatus('success', '✅ 删除成功');
+    setTimeout(closeCmDelete, 600);
+  } catch(e) {
+    showCmDeleteStatus('error', '❌ ' + e.message);
+  }
+}
+
+// ========== MESSAGE BOARD ==========
+function openMsgBoard() {
+  renderMessages();
+  document.getElementById('msgStatus').style.display = 'none';
+  document.getElementById('msgBoardOverlay').classList.add('show');
+}
+
+function closeMsgBoard() {
+  document.getElementById('msgBoardOverlay').classList.remove('show');
+}
+
+function renderMessages() {
+  const list = document.getElementById('msgBoardList');
+  if (!Array.isArray(messagesData) || messagesData.length === 0) {
+    list.innerHTML = '<div class="msgboard-empty">🌌 还没有留言，来写第一条吧~</div>';
+    return;
+  }
+  list.innerHTML = messagesData.map((m, i) => `
+    <div class="msg-item">
+      <button class="msg-del" onclick="deleteMessage(${i})" title="删除">🗑</button>
+      <div class="msg-header">
+        <span class="msg-author">${esc(m.author || '匿名')}</span>
+        <span class="msg-date">${esc(m.date || '')}</span>
+      </div>
+      <div class="msg-body">${esc(m.body || '')}</div>
+    </div>
+  `).join('');
+}
+
+async function saveMessages(message) {
+  const encoded = utf8Encode(JSON.stringify(messagesData, null, 2));
+  const result = await ghPut('data/messages.json', encoded, message, messagesSha);
+  messagesSha = result.content.sha;
+}
+
+function showMsgStatus(type, msg) {
+  const s = document.getElementById('msgStatus');
+  s.className = 'status ' + type; s.textContent = msg; s.style.display = 'block';
+}
+
+async function submitMessage() {
+  const author = (document.getElementById('msgAuthor').value || '').trim() || '匿名';
+  const body = (document.getElementById('msgBody').value || '').trim();
+  if (!body) return showMsgStatus('error', '请输入留言内容');
+  const c = getConfig();
+  if (!c.token) return showMsgStatus('error', '需要 GitHub Token');
+
+  showMsgStatus('loading', '⏳ 正在发布...');
+  try {
+    messagesData.unshift({
+      author, body,
+      date: nowStamp()
+    });
+    await saveMessages(`新增留言 by ${author}`);
+    document.getElementById('msgBody').value = '';
+    showMsgStatus('success', '✅ 留言已发布');
+    renderMessages();
+    updateStats();
+  } catch(e) {
+    showMsgStatus('error', '❌ ' + e.message);
+  }
+}
+
+function deleteMessage(index) {
+  const m = messagesData[index];
+  if (!m) return;
+  pendingCmDelete = { kind: 'message', index };
+  document.getElementById('cmDeleteLabel').textContent = `确定删除来自 "${m.author || '匿名'}" 的留言？`;
+  document.getElementById('cmAdminPw').value = '';
+  document.getElementById('cmDeleteStatus').className = 'status';
+  document.getElementById('cmDeleteStatus').style.display = 'none';
+  document.getElementById('cmDeleteOverlay').classList.add('show');
+  setTimeout(() => document.getElementById('cmAdminPw').focus(), 100);
+}
+
 function updateStats() {
   const files = allResources.filter(r => r.type === 'file').length;
   const links = allResources.filter(r => r.type === 'link').length;
   const posts = allResources.filter(r => r.type === 'post').length;
+  const msgs = Array.isArray(messagesData) ? messagesData.length : 0;
   document.getElementById('fileCount').textContent = files;
   document.getElementById('linkCount').textContent = links;
   document.getElementById('postCount').textContent = posts;
+  document.getElementById('msgCount').textContent = msgs;
   document.getElementById('totalCount').textContent = files + links + posts;
 }
 
@@ -1067,6 +1454,11 @@ function showUploadStatus(type, msg) {
 }
 
 // ========== UTILS ==========
+function nowStamp() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 function utf8Decode(base64) {
   return decodeURIComponent(escape(atob(base64)));
 }
@@ -1241,6 +1633,8 @@ function getDefaultGuide() {
   <li><strong>文件上传</strong> — 支持所有格式，包括文档、图片、代码、压缩包等</li>
   <li><strong>链接分享</strong> — 分享有用的网址、教程链接、工具链接等</li>
   <li><strong>文字帖子</strong> — 直接发布文字教程、心得分享、技术笔记</li>
+  <li><strong>评论互动</strong> — 每个文件/链接/帖子卡片都可以点 <code>💬 评论</code> 留下想法</li>
+  <li><strong>留言板</strong> — 点击顶部 <code>💬 留言板</code> 可以给全站写留言</li>
 </ul>
 
 <h3>&#128272; 管理功能</h3>
