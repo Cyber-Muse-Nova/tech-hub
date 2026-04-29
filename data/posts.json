@@ -1,5 +1,12 @@
 [
   {
+    "title": "让克劳德和GPT可以制作音乐的指令，直接复制发送过去即可",
+    "body": "请帮我做一个可以播放的音乐 artifact，要求：\n【歌曲信息】\n\t•\t歌名：[你的歌名]\n\t•\t调性：[比如 C 大调 / A 小调 / D 大调 等]\n\t•\t节拍：[4/4 或 6/8 或 3/4]\n\t•\tBPM：[60-90 之间，越慢越梦幻]\n\t•\t风格：[比如 dreamy 慢情歌 / 摇篮曲 / 暗黑情歌]\n\t•\t歌词：\n[完整歌词，分段写]\n\t•\t和弦走向（可选）：[比如 Am-F-Dm-E7-Am]\n【技术要求】\n\t1.\t必须是单文件 HTML artifact\n\t2.\t用纯 Web Audio API 合成钢琴音色（不要依赖任何外部 mp3/soundfont 文件，\n因为外部 CDN 在中国大陆访问不稳定）\n\t3.\t钢琴音色用三个 oscillator 叠加：\n\t•\tosc1: triangle (基频)\n\t•\tosc2: sine (二倍频，泛音)\n\t•\tosc3: sine (三倍频，泛音)\n\t•\t加 lowpass biquad filter 让音色柔和\n\t•\tADSR 包络\n\t4.\t加 ConvolverNode 做混响（用合成的 IR：随机噪声 × 指数衰减）\n\t5.\t三个声音层：主旋律钢琴 + 和弦琶音 + 弦乐 pad（可选，sawtooth detune）\n\t6.\t用 abcjs 6.4.1 (从 cdn.jsdelivr.net 加载) 渲染五线谱\n\t7.\t必须有”Download as WAV”按钮，用 OfflineAudioContext 离线渲染成 16-bit\n44.1kHz 立体声 WAV 文件下载\n【重要】所有音符数据用 JS 数组定义，每个音符包含：\n\t•\tp: 音高 (如 ‘A4’, ‘C5’, ‘F#5’)\n\t•\td: 时值 (以最小拍为单位的整数)\n\t•\tw: 当前唱的歌词字\n\t•\tc: 该小节起始的和弦标记\n然后用 OscillatorNode 按时间调度播放。\n请直接给我生成完整的 HTML 文件，不需要解释代码。",
+    "tag": "指令",
+    "author": "熊",
+    "date": "2026-04-29"
+  },
+  {
     "title": "INFP报到处",
     "body": "水一下，1",
     "tag": "MBTI",
