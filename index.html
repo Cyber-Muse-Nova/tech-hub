@@ -348,6 +348,26 @@ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 font-family:'Share Tech Mono';
 }
 
+/* Post image gallery */
+.post-gallery{
+display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));
+gap:.4rem;margin:.6rem 0;
+}
+.post-gallery a{
+display:block;aspect-ratio:1/1;border-radius:6px;overflow:hidden;
+border:1px solid var(--border);background:rgba(0,0,0,.4);
+transition:transform .25s,box-shadow .25s;
+}
+.post-gallery a:hover{
+transform:translateY(-2px);
+box-shadow:0 0 14px rgba(0,240,255,.25);border-color:var(--cyan);
+}
+.post-gallery img{width:100%;height:100%;object-fit:cover;display:block}
+.post-gallery-count{
+font-size:.75rem;color:var(--text2);margin-bottom:.2rem;
+font-family:'Share Tech Mono';
+}
+
 /* Status */
 .status{
 padding:.6rem 1rem;border-radius:6px;font-size:.85rem;margin-top:1rem;
@@ -694,13 +714,17 @@ background:linear-gradient(180deg,var(--cyan),var(--magenta));
     <div class="drop-zone" id="imagesDropZone" onclick="document.getElementById('imagesInput').click()">
       <div class="icon">🖼️</div>
       <p>点击选择图片 或 拖拽图片到此处（可多选）</p>
-      <p style="font-size:.75rem;margin-top:.3rem;color:var(--text2)">支持 jpg / png / gif / webp / svg / bmp</p>
+      <p style="font-size:.75rem;margin-top:.3rem;color:var(--text2)">所有图片会汇集到一个帖子里展示，不会散落成多个文件卡</p>
       <div class="file-name" id="imagesCount"></div>
     </div>
     <input type="file" id="imagesInput" accept="image/*" multiple style="display:none" onchange="handleImages(this.files); this.value=''">
     <div class="image-preview-grid" id="imagesPreview" style="display:none"></div>
     <div class="form-group">
-      <label>统一描述（可选，将应用到所有图片）</label>
+      <label>帖子标题（可选，留空自动生成）</label>
+      <input type="text" id="imagesTitle" placeholder="例如：今日截图合集">
+    </div>
+    <div class="form-group">
+      <label>帖子描述（可选）</label>
       <textarea id="imagesDesc" placeholder="简要描述这批图片..." rows="2"></textarea>
     </div>
     <div class="form-group">
@@ -708,11 +732,11 @@ background:linear-gradient(180deg,var(--cyan),var(--magenta));
       <input type="text" id="imagesTag" placeholder="例如：截图、素材、教程图...">
     </div>
     <div class="form-group">
-      <label>上传者昵称</label>
+      <label>发布者昵称</label>
       <input type="text" id="imagesUploader" placeholder="你的昵称">
     </div>
     <button class="btn btn-cyan" style="width:100%;justify-content:center" onclick="uploadImages()">
-      ⚡ 批量上传
+      ⚡ 批量上传并发帖
     </button>
   </div>
 
@@ -992,12 +1016,30 @@ async function loadResources() {
       fileMetaSha = metaData.sha;
     } catch(e) { fileMeta = {}; fileMetaSha = null; }
 
-    // Load files
+    // Load posts first so we know which image files belong to a post (and should be hidden from the file list)
+    let postsArr = [];
+    const postImageNames = new Set();
+    try {
+      const postsData = await ghGet('data/posts.json');
+      postsArr = JSON.parse(utf8Decode(postsData.content.replace(/\n/g, '')));
+      for (const p of postsArr) {
+        if (Array.isArray(p.images)) {
+          for (const img of p.images) {
+            const n = typeof img === 'string' ? img : img?.name;
+            if (n) postImageNames.add(n);
+          }
+        }
+      }
+    } catch(e) { console.warn('No posts.json yet'); }
+
+    // Load files (skip directories and images already attached to a post)
     try {
       const files = await ghGet('resources');
       if (Array.isArray(files)) {
         for (const f of files) {
           if (f.name === '.gitkeep') continue;
+          if (f.type && f.type !== 'file') continue;
+          if (postImageNames.has(f.name)) continue;
           const meta = fileMeta[f.name] || {};
           allResources.push({
             type: 'file',
@@ -1022,14 +1064,10 @@ async function loadResources() {
       }
     } catch(e) { console.warn('No links.json yet'); }
 
-    // Load posts
-    try {
-      const postsData = await ghGet('data/posts.json');
-      const posts = JSON.parse(utf8Decode(postsData.content.replace(/\n/g, '')));
-      for (const p of posts) {
-        allResources.push({ type: 'post', ...p });
-      }
-    } catch(e) { console.warn('No posts.json yet'); }
+    // Push posts (loaded above)
+    for (const p of postsArr) {
+      allResources.push({ type: 'post', ...p });
+    }
 
     // Load comments
     try {
@@ -1158,15 +1196,28 @@ function renderResources() {
         ${commentsBlock}
       </div>`;
     } else if (r.type === 'post') {
+      const imgs = Array.isArray(r.images) ? r.images : [];
+      const galleryBlock = imgs.length ? `
+        <div class="post-gallery-count">🖼️ 共 ${imgs.length} 张图片</div>
+        <div class="post-gallery">
+          ${imgs.map(img => {
+            const name = typeof img === 'string' ? img : (img?.name || '');
+            const url = typeof img === 'string'
+              ? `https://raw.githubusercontent.com/${getConfig().owner}/${getConfig().repo}/main/resources/${encodeURIComponent(name)}`
+              : (img?.url || '');
+            return `<a href="${esc(url)}" target="_blank" title="${esc(name)}"><img src="${esc(url)}" alt="${esc(name)}" loading="lazy"></a>`;
+          }).join('')}
+        </div>` : '';
       return `<div class="card" style="animation-delay:${i*0.04}s">
         <div class="card-header">
-          <div class="card-icon post">📝</div>
+          <div class="card-icon post">${imgs.length ? '🖼️' : '📝'}</div>
           <div>
             <div class="card-title">${esc(r.title)}</div>
             <div class="card-meta">${esc(r.author||'')}${r.date ? ' · ' + r.date : ''}</div>
           </div>
         </div>
-        <div class="card-post-body">${esc(r.body)}</div>
+        ${r.body ? `<div class="card-post-body">${esc(r.body)}</div>` : ''}
+        ${galleryBlock}
         ${r.tag ? `<span class="card-tag">${esc(r.tag)}</span>` : ''}
         <div class="card-actions">
           <button class="card-comment-toggle" onclick="toggleComments('${jsEsc(rid)}')">💬 评论 <span class="count">${cmtCount}</span></button>
@@ -1487,6 +1538,7 @@ async function uploadImages() {
   const c = getConfig();
   if (!c.token) return showUploadStatus('error', '需要 GitHub Token 才能上传');
 
+  const title = document.getElementById('imagesTitle').value.trim();
   const desc = document.getElementById('imagesDesc').value.trim();
   const tag = document.getElementById('imagesTag').value.trim();
   const uploader = document.getElementById('imagesUploader').value.trim();
@@ -1494,7 +1546,7 @@ async function uploadImages() {
   const usedNames = new Set(allResources.filter(r => r.type === 'file').map(r => r.name));
   const total = selectedImages.length;
   const failedNames = [];
-  let succeeded = 0, metaChanged = false;
+  const uploadedImages = []; // [{name, url}]
 
   for (let i = 0; i < total; i++) {
     const file = selectedImages[i];
@@ -1512,33 +1564,61 @@ async function uploadImages() {
       }
       usedNames.add(finalName);
 
-      await ghPut(
+      const result = await ghPut(
         `resources/${finalName}`,
         base64,
         `批量上传图片: ${finalName}${uploader ? ' by ' + uploader : ''}`
       );
-
-      if (desc || tag || uploader) {
-        fileMeta[finalName] = { desc, tag: tag || '图片', uploader };
-        metaChanged = true;
-      }
-      succeeded++;
+      const url = result?.content?.download_url
+        || `https://raw.githubusercontent.com/${c.owner}/${c.repo}/main/resources/${encodeURIComponent(finalName)}`;
+      uploadedImages.push({ name: finalName, url });
     } catch (e) {
       failedNames.push(file.name);
     }
   }
 
-  if (metaChanged) {
+  // Create a single post containing all uploaded images
+  if (uploadedImages.length > 0) {
+    showUploadStatus('loading', `⏳ 正在创建图片帖子...`);
     try {
-      await saveFileMeta(`批量上传：更新 ${succeeded} 张图片元数据`);
+      let postsArr = [];
+      let postsSha = null;
+      try {
+        const postsData = await ghGet('data/posts.json');
+        postsArr = JSON.parse(utf8Decode(postsData.content.replace(/\n/g, '')));
+        postsSha = postsData.sha;
+      } catch (e) { /* no posts.json yet */ }
+
+      const autoTitle = `🖼️ 图片合集 (${uploadedImages.length} 张) · ${nowStamp()}`;
+      postsArr.push({
+        title: title || autoTitle,
+        body: desc,
+        tag: tag || '图片',
+        author: uploader,
+        date: new Date().toISOString().slice(0, 10),
+        images: uploadedImages,
+      });
+
+      await ghPut(
+        'data/posts.json',
+        utf8Encode(JSON.stringify(postsArr, null, 2)),
+        `批量上传：创建图片帖子（${uploadedImages.length} 张）${uploader ? ' by ' + uploader : ''}`,
+        postsSha
+      );
     } catch (e) {
-      // metadata save failure is non-fatal — files are already uploaded
+      showUploadStatus('error', `❌ 图片已上传，但创建帖子失败：${e.message}`);
+      selectedImages = [];
+      renderImagePreviews();
+      document.getElementById('imagesInput').value = '';
+      loadResources();
+      return;
     }
   }
 
+  const succeeded = uploadedImages.length;
   const failed = failedNames.length;
   if (failed === 0) {
-    showUploadStatus('success', `✅ 全部 ${succeeded} 张图片上传成功！`);
+    showUploadStatus('success', `✅ 已发布图片帖子（${succeeded} 张）`);
   } else if (succeeded === 0) {
     showUploadStatus('error', `❌ 全部上传失败：${failedNames.join('，')}`);
   } else {
@@ -1547,6 +1627,8 @@ async function uploadImages() {
 
   selectedImages = [];
   renderImagePreviews();
+  document.getElementById('imagesTitle').value = '';
+  document.getElementById('imagesDesc').value = '';
   document.getElementById('imagesInput').value = '';
   if (succeeded > 0) loadResources();
 }
@@ -1936,16 +2018,7 @@ async function confirmDelete() {
 
   try {
     if (r.type === 'file') {
-      // Delete file via GitHub API
-      const resp = await fetch(`${API}/repos/${c.owner}/${c.repo}/contents/resources/${encodeURIComponent(r.name)}`, {
-        method: 'DELETE',
-        headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `删除文件: ${r.name}`, sha: r.sha })
-      });
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({}));
-        throw new Error(err.message || `删除失败 (${resp.status})`);
-      }
+      await deleteResourceFile(r.name);
     } else if (r.type === 'link') {
       // Remove link from links.json
       const linksData = await ghGet('data/links.json');
@@ -1959,7 +2032,19 @@ async function confirmDelete() {
         linksData.sha
       );
     } else if (r.type === 'post') {
+      // For image posts, delete attached image files first (best-effort)
+      const imgs = Array.isArray(r.images) ? r.images : [];
+      if (imgs.length) {
+        for (let n = 0; n < imgs.length; n++) {
+          const img = imgs[n];
+          const imgName = typeof img === 'string' ? img : img?.name;
+          if (!imgName) continue;
+          showDeleteStatus('loading', `⏳ 正在删除附带图片 (${n + 1}/${imgs.length}): ${imgName}`);
+          try { await deleteResourceFile(imgName); } catch (e) { /* keep going, orphan is ok */ }
+        }
+      }
       // Remove post from posts.json
+      showDeleteStatus('loading', '⏳ 正在删除帖子...');
       const postsData = await ghGet('data/posts.json');
       const posts = JSON.parse(utf8Decode(postsData.content.replace(/\n/g, '')));
       const idx = posts.findIndex(p => p.title === r.title && p.date === r.date && p.body === r.body);
@@ -1976,6 +2061,30 @@ async function confirmDelete() {
     setTimeout(() => { closeDeleteModal(); loadResources(); }, 800);
   } catch(e) {
     showDeleteStatus('error', '❌ ' + e.message);
+  }
+}
+
+// Delete a single file from resources/. Always re-fetch latest SHA first to avoid
+// stale-SHA 409 errors (the listing API can return outdated SHAs after recent commits).
+async function deleteResourceFile(name) {
+  const c = getConfig();
+  const encoded = encodeURIComponent(name);
+  let sha;
+  try {
+    const cur = await ghGet(`resources/${encoded}`);
+    sha = cur.sha;
+  } catch (e) {
+    if (/404/.test(e.message)) return; // already gone
+    throw new Error(`无法读取文件信息: ${e.message}`);
+  }
+  const resp = await fetch(`${API}/repos/${c.owner}/${c.repo}/contents/resources/${encoded}`, {
+    method: 'DELETE',
+    headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: `删除文件: ${name}`, sha })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.message || `删除失败 (${resp.status})`);
   }
 }
 
