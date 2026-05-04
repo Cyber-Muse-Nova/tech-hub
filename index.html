@@ -939,45 +939,68 @@ let messagesData = [];
 let messagesSha = null;
 let openCommentCards = new Set();
 let pendingCmDelete = null; // { kind: 'comment'|'message', ... }
-const API = 'https://api.github.com';
 
-// ========== CONFIG (Hardcoded) ==========
-const _k = [103,105,116,104,117,98,95,112,97,116,95,49,49,66,52,50,52,73,84,73,48,117,76,53,53,120,118,80,83,55,49,70,120,95,55,109,56,89,107,100,85,77,76,122,118,75,73,56,119,76,122,56,75,115,85,89,100,72,108,114,73,87,107,114,76,110,76,87,71,68,117,50,105,120,76,100,101,68,75,65,69,77,68,90,55,118,68,99,112,51,88,120,90];
+// ========== CONFIG ==========
+// ========== WORKER ENDPOINT (replace after deploying) ==========
+// 1. 部署 worker/index.js 到 Cloudflare Workers
+// 2. 把下面这行替换成你的 Worker 真实地址
+const WORKER_URL = 'https://CHANGE-ME.workers.dev';
+
 function getConfig() {
   return {
     owner: 'Cyber-Muse-Nova',
     repo: 'tech-hub',
-    token: _k.map(c => String.fromCharCode(c)).join(''),
+    worker: WORKER_URL,
   };
 }
 
-// ========== GITHUB API ==========
-function ghHeaders() {
-  const h = { 'Accept': 'application/vnd.github+json' };
-  const t = getConfig().token;
-  if (t) h['Authorization'] = 'Bearer ' + t;
-  return h;
+function workerConfigured() {
+  return WORKER_URL && !WORKER_URL.includes('CHANGE-ME');
 }
 
+// ========== WORKER API CLIENT ==========
 async function ghGet(path) {
-  const c = getConfig();
-  const r = await fetch(`${API}/repos/${c.owner}/${c.repo}/contents/${path}`, { headers: ghHeaders() });
-  if (!r.ok) throw new Error(`GitHub API ${r.status}: ${r.statusText}`);
+  if (!workerConfigured()) throw new Error('请先在 index.html 顶部填写 WORKER_URL');
+  const r = await fetch(`${WORKER_URL}/api/read?path=${encodeURIComponent(path)}`);
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw new Error(err.error || err.message || `读取失败 (${r.status})`);
+  }
   return r.json();
 }
 
-async function ghPut(path, content, message, sha) {
-  const c = getConfig();
-  const body = { message, content };
+async function ghPut(path, content, message, sha, adminPw) {
+  if (!workerConfigured()) throw new Error('请先在 index.html 顶部填写 WORKER_URL');
+  const headers = { 'Content-Type': 'application/json' };
+  if (adminPw) headers['X-Admin-Password'] = adminPw;
+  const body = { path, content, message };
   if (sha) body.sha = sha;
-  const r = await fetch(`${API}/repos/${c.owner}/${c.repo}/contents/${path}`, {
-    method: 'PUT',
-    headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+  const r = await fetch(`${WORKER_URL}/api/write`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
   });
   if (!r.ok) {
     const err = await r.json().catch(() => ({}));
-    throw new Error(err.message || `上传失败 (${r.status})`);
+    throw new Error(err.error || err.message || `写入失败 (${r.status})`);
+  }
+  return r.json();
+}
+
+async function ghDelete(path, message, sha, adminPw) {
+  if (!workerConfigured()) throw new Error('请先在 index.html 顶部填写 WORKER_URL');
+  const headers = { 'Content-Type': 'application/json' };
+  if (adminPw) headers['X-Admin-Password'] = adminPw;
+  const body = { path, message };
+  if (sha) body.sha = sha;
+  const r = await fetch(`${WORKER_URL}/api/delete`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw new Error(err.error || err.message || `删除失败 (${r.status})`);
   }
   return r.json();
 }
@@ -1005,6 +1028,10 @@ async function initRepo() {
 // ========== LOAD RESOURCES ==========
 async function loadResources() {
   const grid = document.getElementById('resourceGrid');
+  if (!workerConfigured()) {
+    grid.innerHTML = '<div class="empty"><div class="icon">⚙️</div><p>请先部署 Cloudflare Worker，然后在 index.html 顶部修改 <code>WORKER_URL</code>。<br>详细步骤见 <code>worker/README.md</code>。</p></div>';
+    return;
+  }
   grid.innerHTML = '<div class="empty"><div class="icon">⏳</div><p>正在从 GitHub 加载资源...</p></div>';
   allResources = [];
 
@@ -1253,9 +1280,9 @@ function toggleComments(rid) {
   if (sec) sec.classList.toggle('open');
 }
 
-async function saveComments(message) {
+async function saveComments(message, adminPw) {
   const encoded = utf8Encode(JSON.stringify(commentsData, null, 2));
-  const result = await ghPut('data/comments.json', encoded, message, commentsSha);
+  const result = await ghPut('data/comments.json', encoded, message, commentsSha, adminPw);
   commentsSha = result.content.sha;
 }
 
@@ -1272,7 +1299,7 @@ async function addComment(rid) {
   const body = (bodyEl.value || '').trim();
   if (!body) return showCmtStatus(rid, 'error', '请输入评论内容');
   const c = getConfig();
-  if (!c.token) return showCmtStatus(rid, 'error', '需要 GitHub Token');
+  if (!workerConfigured()) return showCmtStatus(rid, 'error', '请先在 index.html 顶部配置 WORKER_URL');
 
   showCmtStatus(rid, 'loading', '⏳ 正在发送...');
   try {
@@ -1327,12 +1354,12 @@ async function confirmCmDelete() {
       const list = commentsData[rid] || [];
       list.splice(index, 1);
       if (list.length === 0) delete commentsData[rid];
-      await saveComments(`删除评论 on ${rid}`);
+      await saveComments(`删除评论 on ${rid}`, pw);
       renderResources();
     } else if (pendingCmDelete.kind === 'message') {
       const { index } = pendingCmDelete;
       messagesData.splice(index, 1);
-      await saveMessages('删除留言');
+      await saveMessages('删除留言', pw);
       renderMessages();
       updateStats();
     }
@@ -1372,9 +1399,9 @@ function renderMessages() {
   `).join('');
 }
 
-async function saveMessages(message) {
+async function saveMessages(message, adminPw) {
   const encoded = utf8Encode(JSON.stringify(messagesData, null, 2));
-  const result = await ghPut('data/messages.json', encoded, message, messagesSha);
+  const result = await ghPut('data/messages.json', encoded, message, messagesSha, adminPw);
   messagesSha = result.content.sha;
 }
 
@@ -1388,7 +1415,7 @@ async function submitMessage() {
   const body = (document.getElementById('msgBody').value || '').trim();
   if (!body) return showMsgStatus('error', '请输入留言内容');
   const c = getConfig();
-  if (!c.token) return showMsgStatus('error', '需要 GitHub Token');
+  if (!workerConfigured()) return showMsgStatus('error', '请先在 index.html 顶部配置 WORKER_URL');
 
   showMsgStatus('loading', '⏳ 正在发布...');
   try {
@@ -1463,7 +1490,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function uploadFile() {
   if (!selectedFile) return showUploadStatus('error', '请先选择文件');
   const c = getConfig();
-  if (!c.token) return showUploadStatus('error', '需要 GitHub Token 才能上传');
+  if (!workerConfigured()) return showUploadStatus('error', '请先在 index.html 顶部配置 WORKER_URL');
 
   showUploadStatus('loading', '⏳ 正在上传...');
 
@@ -1536,7 +1563,7 @@ function removeImage(i) {
 async function uploadImages() {
   if (!selectedImages.length) return showUploadStatus('error', '请先选择图片');
   const c = getConfig();
-  if (!c.token) return showUploadStatus('error', '需要 GitHub Token 才能上传');
+  if (!workerConfigured()) return showUploadStatus('error', '请先在 index.html 顶部配置 WORKER_URL');
 
   const title = document.getElementById('imagesTitle').value.trim();
   const desc = document.getElementById('imagesDesc').value.trim();
@@ -1643,7 +1670,7 @@ async function addLink() {
 
   if (!title || !url) return showUploadStatus('error', '请填写链接标题和地址');
   const c = getConfig();
-  if (!c.token) return showUploadStatus('error', '需要 GitHub Token 才能添加');
+  if (!workerConfigured()) return showUploadStatus('error', '请先在 index.html 顶部配置 WORKER_URL');
 
   showUploadStatus('loading', '⏳ 正在添加...');
 
@@ -1835,7 +1862,7 @@ async function publishPost() {
 
   if (!title || !body) return showUploadStatus('error', '请填写帖子标题和内容');
   const c = getConfig();
-  if (!c.token) return showUploadStatus('error', '需要 GitHub Token');
+  if (!workerConfigured()) return showUploadStatus('error', '请先在 index.html 顶部配置 WORKER_URL');
 
   showUploadStatus('loading', '⏳ 正在发布...');
 
@@ -1946,7 +1973,7 @@ async function saveGuide() {
 
   try {
     const encoded = utf8Encode(JSON.stringify({ content }, null, 2));
-    const result = await ghPut('data/guide.json', encoded, '更新使用说明', guideData.sha);
+    const result = await ghPut('data/guide.json', encoded, '更新使用说明', guideData.sha, pw);
     guideData.content = content;
     guideData.sha = result.content.sha;
     document.getElementById('guideInner').innerHTML = content;
@@ -2011,14 +2038,13 @@ async function confirmDelete() {
   const r = allResources[pendingDeleteIndex];
   if (!r) return showDeleteStatus('error', '资源不存在');
 
-  const c = getConfig();
-  if (!c.token) return showDeleteStatus('error', '需要 GitHub Token');
+  if (!workerConfigured()) return showDeleteStatus('error', '请先在 index.html 顶部配置 WORKER_URL');
 
   showDeleteStatus('loading', '⏳ 正在删除...');
 
   try {
     if (r.type === 'file') {
-      await deleteResourceFile(r.name);
+      await deleteResourceFile(r.name, pw);
     } else if (r.type === 'link') {
       // Remove link from links.json
       const linksData = await ghGet('data/links.json');
@@ -2029,7 +2055,8 @@ async function confirmDelete() {
         'data/links.json',
         utf8Encode(JSON.stringify(links, null, 2)),
         `删除链接: ${r.title || r.url}`,
-        linksData.sha
+        linksData.sha,
+        pw
       );
     } else if (r.type === 'post') {
       // For image posts, delete attached image files first (best-effort)
@@ -2040,7 +2067,7 @@ async function confirmDelete() {
           const imgName = typeof img === 'string' ? img : img?.name;
           if (!imgName) continue;
           showDeleteStatus('loading', `⏳ 正在删除附带图片 (${n + 1}/${imgs.length}): ${imgName}`);
-          try { await deleteResourceFile(imgName); } catch (e) { /* keep going, orphan is ok */ }
+          try { await deleteResourceFile(imgName, pw); } catch (e) { /* keep going, orphan is ok */ }
         }
       }
       // Remove post from posts.json
@@ -2053,7 +2080,8 @@ async function confirmDelete() {
         'data/posts.json',
         utf8Encode(JSON.stringify(posts, null, 2)),
         `删除帖子: ${r.title}`,
-        postsData.sha
+        postsData.sha,
+        pw
       );
     }
 
@@ -2064,28 +2092,10 @@ async function confirmDelete() {
   }
 }
 
-// Delete a single file from resources/. Always re-fetch latest SHA first to avoid
-// stale-SHA 409 errors (the listing API can return outdated SHAs after recent commits).
-async function deleteResourceFile(name) {
-  const c = getConfig();
-  const encoded = encodeURIComponent(name);
-  let sha;
-  try {
-    const cur = await ghGet(`resources/${encoded}`);
-    sha = cur.sha;
-  } catch (e) {
-    if (/404/.test(e.message)) return; // already gone
-    throw new Error(`无法读取文件信息: ${e.message}`);
-  }
-  const resp = await fetch(`${API}/repos/${c.owner}/${c.repo}/contents/resources/${encoded}`, {
-    method: 'DELETE',
-    headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: `删除文件: ${name}`, sha })
-  });
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err.message || `删除失败 (${resp.status})`);
-  }
+// Delete a single file from resources/. Worker re-fetches latest SHA itself,
+// so we don't need to do it here.
+async function deleteResourceFile(name, adminPw) {
+  await ghDelete(`resources/${name}`, `删除文件: ${name}`, null, adminPw);
 }
 
 // ========== INIT ==========
