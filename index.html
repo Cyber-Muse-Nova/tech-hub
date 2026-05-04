@@ -322,6 +322,32 @@ font-family:'Share Tech Mono';font-size:.85rem;color:var(--green);
 margin-top:.5rem;text-shadow:0 0 8px rgba(0,255,136,.3);
 }
 
+/* Image preview grid (batch image upload) */
+.image-preview-grid{
+display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));
+gap:.5rem;margin-bottom:1rem;max-height:280px;overflow-y:auto;
+padding:.6rem;border:1px solid var(--border);border-radius:8px;
+background:rgba(6,6,14,.5);
+}
+.image-preview-item{
+position:relative;aspect-ratio:1/1;border-radius:6px;overflow:hidden;
+border:1px solid var(--border);background:rgba(0,0,0,.5);
+}
+.image-preview-item img{width:100%;height:100%;object-fit:cover;display:block}
+.image-preview-item .remove{
+position:absolute;top:2px;right:2px;width:20px;height:20px;
+border-radius:50%;background:rgba(255,0,170,.85);color:#fff;
+display:flex;align-items:center;justify-content:center;cursor:pointer;
+font-size:11px;line-height:1;border:none;font-weight:bold;
+}
+.image-preview-item .remove:hover{background:var(--magenta);box-shadow:0 0 10px var(--magenta)}
+.image-preview-item .name{
+position:absolute;left:0;right:0;bottom:0;padding:2px 4px;
+font-size:.65rem;color:#fff;background:rgba(0,0,0,.7);
+white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+font-family:'Share Tech Mono';
+}
+
 /* Status */
 .status{
 padding:.6rem 1rem;border-radius:6px;font-size:.85rem;margin-top:1rem;
@@ -631,6 +657,7 @@ background:linear-gradient(180deg,var(--cyan),var(--magenta));
       <!-- Tabs -->
       <div class="tabs">
         <button class="tab active" onclick="switchTab('file')">📁 上传文件</button>
+        <button class="tab" onclick="switchTab('images')">🖼️ 批量图片</button>
         <button class="tab" onclick="switchTab('link')">🔗 添加链接</button>
         <button class="tab" onclick="switchTab('post')">📝 发帖</button>
       </div>
@@ -659,6 +686,33 @@ background:linear-gradient(180deg,var(--cyan),var(--magenta));
     </div>
     <button class="btn btn-cyan" style="width:100%;justify-content:center" onclick="uploadFile()">
       ⚡ 上传文件
+    </button>
+  </div>
+
+  <!-- Batch Image Upload -->
+  <div id="tabImages" style="display:none">
+    <div class="drop-zone" id="imagesDropZone" onclick="document.getElementById('imagesInput').click()">
+      <div class="icon">🖼️</div>
+      <p>点击选择图片 或 拖拽图片到此处（可多选）</p>
+      <p style="font-size:.75rem;margin-top:.3rem;color:var(--text2)">支持 jpg / png / gif / webp / svg / bmp</p>
+      <div class="file-name" id="imagesCount"></div>
+    </div>
+    <input type="file" id="imagesInput" accept="image/*" multiple style="display:none" onchange="handleImages(this.files); this.value=''">
+    <div class="image-preview-grid" id="imagesPreview" style="display:none"></div>
+    <div class="form-group">
+      <label>统一描述（可选，将应用到所有图片）</label>
+      <textarea id="imagesDesc" placeholder="简要描述这批图片..." rows="2"></textarea>
+    </div>
+    <div class="form-group">
+      <label>分类标签（可选）</label>
+      <input type="text" id="imagesTag" placeholder="例如：截图、素材、教程图...">
+    </div>
+    <div class="form-group">
+      <label>上传者昵称</label>
+      <input type="text" id="imagesUploader" placeholder="你的昵称">
+    </div>
+    <button class="btn btn-cyan" style="width:100%;justify-content:center" onclick="uploadImages()">
+      ⚡ 批量上传
     </button>
   </div>
 
@@ -851,6 +905,7 @@ let allResources = [];
 let fileMeta = {};
 let fileMetaSha = null;
 let selectedFile = null;
+let selectedImages = [];
 let currentTag = 'all';
 let pendingDescIndex = null;
 let guideData = { content: '', sha: null };
@@ -1344,6 +1399,14 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('fileName').textContent = '📎 ' + selectedFile.name + ' (' + formatSize(selectedFile.size) + ')';
     }
   });
+
+  const idz = document.getElementById('imagesDropZone');
+  idz.addEventListener('dragover', e => { e.preventDefault(); idz.classList.add('dragover'); });
+  idz.addEventListener('dragleave', () => idz.classList.remove('dragover'));
+  idz.addEventListener('drop', e => {
+    e.preventDefault(); idz.classList.remove('dragover');
+    if (e.dataTransfer.files.length > 0) handleImages(e.dataTransfer.files);
+  });
 });
 
 async function uploadFile() {
@@ -1380,6 +1443,112 @@ async function uploadFile() {
   } catch(e) {
     showUploadStatus('error', '❌ ' + e.message);
   }
+}
+
+// ========== BATCH IMAGE UPLOAD ==========
+function handleImages(fileList) {
+  const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+  if (!files.length) {
+    if (fileList.length) showUploadStatus('error', '请选择图片文件');
+    return;
+  }
+  selectedImages = selectedImages.concat(files);
+  renderImagePreviews();
+}
+
+function renderImagePreviews() {
+  const grid = document.getElementById('imagesPreview');
+  const count = document.getElementById('imagesCount');
+  if (!selectedImages.length) {
+    grid.style.display = 'none';
+    grid.innerHTML = '';
+    count.textContent = '';
+    return;
+  }
+  grid.style.display = 'grid';
+  const totalSize = selectedImages.reduce((s, f) => s + f.size, 0);
+  count.textContent = `📎 已选 ${selectedImages.length} 张 (${formatSize(totalSize)})`;
+  grid.innerHTML = selectedImages.map((f, i) => `
+    <div class="image-preview-item">
+      <img src="${URL.createObjectURL(f)}" alt="${esc(f.name)}">
+      <button class="remove" onclick="removeImage(${i})" title="移除">✕</button>
+      <div class="name">${esc(f.name)}</div>
+    </div>
+  `).join('');
+}
+
+function removeImage(i) {
+  selectedImages.splice(i, 1);
+  renderImagePreviews();
+}
+
+async function uploadImages() {
+  if (!selectedImages.length) return showUploadStatus('error', '请先选择图片');
+  const c = getConfig();
+  if (!c.token) return showUploadStatus('error', '需要 GitHub Token 才能上传');
+
+  const desc = document.getElementById('imagesDesc').value.trim();
+  const tag = document.getElementById('imagesTag').value.trim();
+  const uploader = document.getElementById('imagesUploader').value.trim();
+
+  const usedNames = new Set(allResources.filter(r => r.type === 'file').map(r => r.name));
+  const total = selectedImages.length;
+  const failedNames = [];
+  let succeeded = 0, metaChanged = false;
+
+  for (let i = 0; i < total; i++) {
+    const file = selectedImages[i];
+    showUploadStatus('loading', `⏳ 正在上传 (${i + 1}/${total}): ${file.name}`);
+    try {
+      const base64 = await fileToBase64(file);
+      let finalName = sanitizeFileName(file.name);
+      if (usedNames.has(finalName)) {
+        const dot = finalName.lastIndexOf('.');
+        const baseName = dot > 0 ? finalName.slice(0, dot) : finalName;
+        const ext = dot > 0 ? finalName.slice(dot) : '';
+        let suffix = 1;
+        while (usedNames.has(`${baseName}-${suffix}${ext}`)) suffix++;
+        finalName = `${baseName}-${suffix}${ext}`;
+      }
+      usedNames.add(finalName);
+
+      await ghPut(
+        `resources/${finalName}`,
+        base64,
+        `批量上传图片: ${finalName}${uploader ? ' by ' + uploader : ''}`
+      );
+
+      if (desc || tag || uploader) {
+        fileMeta[finalName] = { desc, tag: tag || '图片', uploader };
+        metaChanged = true;
+      }
+      succeeded++;
+    } catch (e) {
+      failedNames.push(file.name);
+    }
+  }
+
+  if (metaChanged) {
+    try {
+      await saveFileMeta(`批量上传：更新 ${succeeded} 张图片元数据`);
+    } catch (e) {
+      // metadata save failure is non-fatal — files are already uploaded
+    }
+  }
+
+  const failed = failedNames.length;
+  if (failed === 0) {
+    showUploadStatus('success', `✅ 全部 ${succeeded} 张图片上传成功！`);
+  } else if (succeeded === 0) {
+    showUploadStatus('error', `❌ 全部上传失败：${failedNames.join('，')}`);
+  } else {
+    showUploadStatus('error', `⚠️ 成功 ${succeeded} 张，失败 ${failed} 张：${failedNames.join('，')}`);
+  }
+
+  selectedImages = [];
+  renderImagePreviews();
+  document.getElementById('imagesInput').value = '';
+  if (succeeded > 0) loadResources();
 }
 
 // ========== LINK ADD ==========
@@ -1438,6 +1607,7 @@ function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   event.target.classList.add('active');
   document.getElementById('tabFile').style.display = tab === 'file' ? 'block' : 'none';
+  document.getElementById('tabImages').style.display = tab === 'images' ? 'block' : 'none';
   document.getElementById('tabLink').style.display = tab === 'link' ? 'block' : 'none';
   document.getElementById('tabPost').style.display = tab === 'post' ? 'block' : 'none';
 }
